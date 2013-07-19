@@ -32,7 +32,7 @@ The mode is not in repositories. This mode must be run in EMACS v24 (or above). 
 
     git clone https://github.com/rcrowther/vala-mode2.git
 
-  They are in an EMACS package (from github, an uncompressed folder).
+   They are in an EMACS package (from github, an uncompressed folder).
 
 2. Put the files somewhere
 
@@ -189,13 +189,13 @@ Help
 ====
 Please note that the author does not recommend changing any settings found via the commands below. For example, there is still plenty of development code in the mode, and some non-working semi-obscured features.
 
-For information, try ``describe-mode``, ::
+For information, try 'describe-mode', ::
 
   C-h m
 
-``help apros`` is more useful, ::
-  C-h a 
-  vala
+'help apros' is more useful, ::
+
+  C-h a vala
 
 User customizations can be seen in, ::
 
@@ -209,13 +209,12 @@ There's a TODO (with rough CHANGELOG and MAYBEPATH) in source but, publicly,
 - The mode would be far more interesting if it handled tabs
 - Many will want some sophistication added to the indenting
 - The options and customization need help
-- Colorschemes for > 8 bit terminals would be nice.
+- Color schemes for > 8 bit terminals would be nice.
 
 
 Acknowlegements
 ===============
-This code started as a hack of scala-mode2 (umm, yes it was),
+This code started as a hack of scala-mode2 (umm, yes it was). Though this should not be taken as any guide to the quality of this code.
 
-
-Though this should not be taken as any guide to the quality of this code. A couple of the ideas are still in there, such as the concatenating list markup. Interesting mode, scala-mode2. 
+A couple of the ideas are still in there, such as the concatenating of comment list markup. Interesting mode, scala-mode2. 
 

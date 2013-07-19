@@ -136,8 +136,8 @@ When started, runs `vala-mode2-hook'.
 ;;;###autoload
 (progn
   (add-to-list 'auto-mode-alist
-               '("\\.\\(vala\\)\\'" . vala-mode2))
-  (modify-coding-system-alist 'file "\\.\\(vala\\)\\'" 'utf-8))
+               '("\\.\\(vala\\|vapi\\)\\'" . vala-mode2))
+  (modify-coding-system-alist 'file "\\.\\(vala\\|vapi\\)\\'" 'utf-8))
 
 (provide 'vala-mode2)
 ;;; vala-mode2.el ends here
