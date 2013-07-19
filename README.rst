@@ -3,7 +3,7 @@
 ============
 :Authors:
   Robert Crowther
-: Version:
+:Version:
   Alpha
 
 
@@ -11,16 +11,16 @@ About
 =====
 This is not the comprehensive, standards-savvy, up-to-date mode which Vala, at this point, probably deserves.
 
-However, the author only uses EMACS in  a trivial way, to format and hunt down typographical errors, and has never coded in a LISP before. So he feels only a little sadness about this, and no regrets.
+However, the author only uses EMACS in  a trivial way, to format and hunt down typographical errors, and has never coded in a LISP before. So he feels little sadness about this, and no regrets.
 
-Knowing very little about EMACs mode coding, and up against Vala's c-family syntax, the author made eccentric decisions. One of these, for example, was not to extend from CC mode (on which `c-mode', `java-mode` and several others are based). Without that code, the indentation is crude. But (the author shrugs his shoulders), some of this may turn out to be good for hunting down errors and formatting code. That's what matters.
+Knowing very little about EMACs mode coding, and up against Vala's c-family syntax, the author made eccentric decisions. One of these, for example, was not to extend from CC mode (on which 'c-mode', 'java-mode' and several others are based). Without that code, the indentation is crude. But (the author shrugs his shoulders), some of this may turn out to be good for hunting down errors and formatting code. That's what matters.
 
 
 To Consider
 ===========
 Do not rely on the code, please assess for yourself. Comments are welcome.
 
-Please note the mode *only* works with spaces. Conceptually it can work with tabs, but will this not be implemented unless the author uncovers more information on how to configure EMACS (current code and implementation information, not blogs on keystrokes).
+Please note the mode works *only* with spaces. Conceptually it can work with tabs, but will this not be implemented unless the author uncovers more information on how to configure EMACS (current code and implementation information, not blogs on keystrokes).
 
 
 Installation
@@ -30,9 +30,9 @@ The mode is not in repositories. This mode must be run in EMACS v24 (or above). 
 
 1. Download the files, or, ::
 
-    git clone git://github.com/rcrowther/vala-mode2.git
+    git clone https://github.com/rcrowther/vala-mode2.git
 
-  They are in an EMACS package (from github, uncompressed).
+  They are in an EMACS package (from github, an uncompressed folder).
 
 2. Put the files somewhere
 
@@ -44,20 +44,14 @@ The mode is not in repositories. This mode must be run in EMACS v24 (or above). 
 
 3. Initialize in EMACS
 
-   Manually,
-     Include the following in your Emacs config file. ::
+   Include the following in your Emacs config file. ::
 
-             (add-to-list 'load-path "/path/to/vala-mode2/")
-             (require 'vala-mode2)
+    (add-to-list 'load-path "/path/to/vala-mode2/")
+    (require 'vala-mode2)
 
-   Via EMACS interfaces
-     load-file (type 【Alt+x】) 
-
-
-
-list-packages. Then i, then x
-  M-x package-install
-package-install-file
+   Note that the load path line must point to the directory - the search will not probe recursively.
+   
+There is no way known to the author of loading local directory contents into EMACS interfaces and/or the packaging system. Even when manually loaded, the results will not appear in ``M-x package-list-packages``.
 
 Besides the features listed below, all of which run via standard EMACS commands, there is one command of note, to change indenting style, ::
 
@@ -67,7 +61,7 @@ Besides the features listed below, all of which run via standard EMACS commands,
 
 Features
 ========
-Several of the eccentricities came about because the author chose simple detection heuristics. They're not even accurate.
+Several of the eccentricities came about because the author chose simple detection heuristics. They're not accurate.
 
 
 Parsing of highlighting
@@ -97,7 +91,7 @@ Types are highlighted inconsistently
   Types are only highlighted when they create new types, or appear in method declarations.
 
 Keywords are split into OO modifiers and minor
-  To the author there's a difference
+  To the author, there's a difference
 
 The highlighting rarely spills
   A byproduct of some of the coding. But the author don't regard this EMACS feature highly.
@@ -131,16 +125,19 @@ Indenting
 ---------
 Currently, the indenting code is simplistic. The code can differentiate between outer/method indents and braces, then indent accordingly. What it can not do is identify inner code structures such as if..then run-ons (though it does indent throw, and switch statement bodies as if they were bracketed).
 
-Still, it can do some sort of simulation of various styles e.g. ITBS, and Allman. ::
+Still, it can do some sort of simulation of various styles. Change indentation style using, ::
 
   M-x vala-set-style <stylename>
 
-to change.
+``stylename`` is a short descriptive string.
 
-Valid indenting styles can be viewed,
+To see valid entires for this function, and how they indent, look in the file vala-style.el for the function vala-style:presets. It's easier than fighting with EMACS. The current list is,::
 
+  gnu, 1tbs, k&r, allman, stroudstrup, whitesmith, linux, ihb
 
-You should be able to set the variables directly. But the manual is hapless, help is thin on the ground, so what we have at the moment is the best it can be for now.
+All of which are rough approximations, not guarenteed formatting.
+
+You should be able to set the variables directly. But the manual is hapless, help is thin on the ground, so what we have at the moment is what we have.
 
  
 Fill functions
@@ -163,9 +160,9 @@ The cleanup code is always on, can not be switched off.
 
 Notes for Emacs hackers and fans
 ================================
-Not knowing how to use EMACS syntax data and parser, the author took a different route. The result is low on syntax detection. It can also be expensive on CPU time. If anyone wanted it faster, likely it could be made faster.
+This mode is low on syntax detection. It can also be expensive on CPU time. If anyone wants it faster, likely it can be made faster.
 
-Somewhat unusually, the mode will generally (excerpt in strings and block comments) stop highlighting whenever it doesn't understand something. And, in general, it reacts to Just-In-Time re-highlighting. The mode should not often cause "EMACS went wrong".
+Somewhat unusually, the mode will generally (except in strings and block comments) stop highlighting whenever it doesn't understand something. And, in general, it reacts to Just-In-Time re-highlighting. The mode should not often cause "EMACS went wrong".
 
 
 Beat the mode
@@ -188,15 +185,31 @@ A diverting and EMACS-instructive pastime is to try confusing modes with code th
 ...Humm. The code for highlighting symbols is likely one unconstrained lump (it is).
 
 
+Help
+====
+Please note that the author does not recommend changing any settings found via the commands below. For example, there is still plenty of development code in the mode, and some non-working semi-obscured features.
+
+For information, try ``describe-mode``, ::
+
+  C-h m
+
+``help apros`` is more useful, ::
+  C-h a 
+  vala
+
+User customizations can be seen in, ::
+
+  M-x customize > Programming > Languages > Vala
+
 
 TODO
 ====
 There's a TODO (with rough CHANGELOG and MAYBEPATH) in source but, publicly,
 
-The mode would be far more interesting if it handled tabs
-Many will want some sophistication added to the indenting
-The options and customization need help
-Colorschemes for > 8 bit terminals would be nice.
+- The mode would be far more interesting if it handled tabs
+- Many will want some sophistication added to the indenting
+- The options and customization need help
+- Colorschemes for > 8 bit terminals would be nice.
 
 
 Acknowlegements
