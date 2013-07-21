@@ -20,7 +20,9 @@ To Consider
 ===========
 Do not rely on the code, please assess for yourself. Comments are welcome.
 
-Please note the mode works *only* with spaces. Conceptually it can work with tabs, but will this not be implemented unless the author uncovers more information on how to configure EMACS (current code and implementation information, not blogs on keystrokes).
+The mode works *only* with spaces.
+
+(conceptually it can work with tabs, but will this not be implemented unless the author uncovers more information on how to configure EMACS)
 
 
 Installation
@@ -121,25 +123,36 @@ Verbatim and literal strings
 Full detection of verbatim and literal strings, cross-line. Imbalanced brackets usually spill (occasionally abbreviate) highlighting.
 
 
+
+.. _Indenting:
+
 Indenting
 ---------
-Currently, the indenting code is simplistic. The code can differentiate between outer/method indents and braces, then indent accordingly. What it can not do is identify inner code structures such as if..then run-ons (though it does indent throw, and switch statement bodies as if they were bracketed).
+Currently, the indenting code is simplistic. The code can differentiate between outer/method indents and braces. What it can not do is identify inner code structures such as if..then run-ons (though it does indent throw, and switch statement bodies).
 
-Still, it can do some sort of simulation of various styles. Change indentation style using, ::
+Still, it can do some sort of simulation of various styles. See the current setting ::
 
+  C-h > v > vala-indentation-style <stylename>
+
+Change indentation style, ::
+
+  M-x customize-mode > vala
+
+A preset can be selected or, if 'custom' is selected, indents can be set by hand. 
+ 
   M-x vala-set-style <stylename>
 
 ``stylename`` is a short descriptive string.
 
-To see valid entires for this function, and how they indent, look in the file vala-style.el for the function vala-style:presets. It's easier than fighting with EMACS. The current list is,::
+To see valid entries for this function, and how they indent, use the customize interface or look in the file vala-style.el for the function vala-style:presets. The current list is,::
 
-  gnu, 1tbs, k&r, allman, stroudstrup, whitesmith, linux, ihb
+  gnu, 1tbs, k&r, allman, stroudstrup, whitesmith, linux, ais
 
-All of which are rough approximations, not guarenteed formatting.
+All the common styles are rough approximations, not guarenteed formatting. 'ais' is an invented style - 'as if syntax' - which treats brackets as syntax and indent 2 spaces everywhere.
 
-You should be able to set the variables directly. But the manual is hapless, help is thin on the ground, so what we have at the moment is what we have.
+Yhe customization interface is recommended, and other methods (e.g. progamatic) are currently undefined.
 
- 
+
 Fill functions
 --------------
 The fill functions protect against fill commands (M-q etc.) altering anything but comments and strings.
@@ -162,7 +175,7 @@ Notes for Emacs hackers and fans
 ================================
 This mode is low on syntax detection. It can also be expensive on CPU time. If anyone wants it faster, likely it can be made faster.
 
-Somewhat unusually, the mode will generally (except in strings and block comments) stop highlighting whenever it doesn't understand something. And, in general, it reacts to Just-In-Time re-highlighting. The mode should not often cause "EMACS went wrong".
+Somewhat unusually, the mode will (except in strings and block comments) stop highlighting whenever it doesn't understand something. And, in general, it reacts to Just-In-Time re-highlighting. The mode should not often cause "EMACS went wrong".
 
 
 Beat the mode
@@ -187,19 +200,23 @@ A diverting and EMACS-instructive pastime is to try confusing modes with code th
 
 Help
 ====
-Please note that the author does not recommend changing any settings found via the commands below. For example, there is still plenty of development code in the mode, and some non-working semi-obscured features.
+There is still plenty of development code in the mode, and some non-working/semi-developed, semi-obscured features. So do not rely on the results of the following common EMACS commands.
 
 For information, try 'describe-mode', ::
 
   C-h m
 
-'help apros' is more useful, ::
+...currently uninteresting. 'help apros' is more useful, ::
 
   C-h a vala
 
-User customizations can be seen in, ::
+User customizations are operative (see Indenting_) and can be seen in, ::
 
   M-x customize > Programming > Languages > Vala
+
+or, ::
+
+  M-x customize-mode > Vala
 
 
 TODO
@@ -214,7 +231,7 @@ There's a TODO (with rough CHANGELOG and MAYBEPATH) in source but, publicly,
 
 Acknowlegements
 ===============
-This code started as a hack of scala-mode2 (umm, yes it was). Though this should not be taken as any guide to the quality of this code.
+This code started as a hack of scala-mode2 (umm, yes it was). Though this should not be taken as a guide to the quality of this code.
 
-A couple of the ideas are still in there, such as the concatenating of comment list markup. Interesting mode, scala-mode2. 
+A couple of scala-mode2 ideas are still in there, such as the concatenating of comment list markup. Interesting mode, scala-mode2. 
 

@@ -1,4 +1,6 @@
 == CHANGELOG
+Viable approch for customizing indents. 
+Add vapi to acceptable filelist.
 Should be called vala-mode2. It's not the first.
 Optional whitespace cleanup? See cc mode... (no, the auto-cleanup function is simple, leave it)
 Fixed the horrible, elusive, "strings cause newline to skip chunks" bug.
@@ -17,13 +19,19 @@ More sophisticated indenting.
 - Interesting info on indenting styles,
 ;; http://www.riedquat.de/prog/style
 
+Compile info into README
+
+Seems to enter infinite loop on vapi test file.
+
 Check tab control (now on hold)
 
 Enum methods not highlighting
 
-Add vapi to acceptable filelist.
+Indent code is not giving right indents at right places?
 
-Three highlight modes,
+Test permanent saves of indent style customization.
+
+Three highlight modes:
 This now somewhat abandoned functionality could be interesting in this mode, not for peformance reasons, but for "levels of highlighting", e.g.
 3 full
 2 comments/keywords (maybe comments/OO definitions)
@@ -55,12 +63,13 @@ Compiling
 no:
 
 yes: paragraph
-lib
-styles
+     lib
+     styles
      faces
      fontlock
      indent
 Profiling
+
 
 == The issue of custom variables
 Variable setting in the mode is inconsistent, not adhering to standards, and haphazard.
@@ -76,22 +85,6 @@ Places where the setting/reading of variables is important, and currently not/ba
 === Fontlocking
 There is a manual note that there is no need to make variables for fontlocking. Why, I have not pursued. Something to do with the functions doing it, I suppose. We'd need variables to change fonts, would we? 
 
-=== indenting
-The code needs to set a couple of variables to decide what style to use. These variables, if offered through the Customize interface, via defcustom, must protect against unavailable values being entered. I don't see how to do that, wither in the basic settings, or by callback validation code.
-
-If the Customize interface does not offer this as a solution, then I don't know how the variables *should* be offered. Curtently, styles.el offers the vala-set-style function (idea kind of lifted from cc-mode), which hardly covers the possibility of wanting buffer specific styles (it is possible Vala programmers may want different styles for .vapi files, too)  
-
-
-Instuctions like this not currently possible,
- Or set one of the four variables yourself,
-
-M-x customise
-Programming > Languages > Vala
-Or set them directly,
-        (vala-indent:nesting-definition-to-brackets . 2)
-        (vala-indent:nesting-brackets-to-body . 2)
-        (vala-indent:definition-to-brackets . 2)
-        (vala-indent:brackets-to-body 
 
 
 ==== Indent style, tabs vs. spaces
@@ -113,18 +106,24 @@ There comes a point where it is not worth fighting with a system because the gai
 
 == MAYBEPATH
 Draft
-Features considered, code sketched out.
+No testing.
+Features considered, code sketched out. 
+May contain debug code, but should be operative.
 
 Alpha
-May yet turn a buffer green, or a fill may collapse a whole file.
+Only basic testing. May yet turn a buffer green, or a fill may collapse a whole file.
+All features/API subject to change.
+May contain debug code, but should be operative.
 
 Beta
 Enough testing, even internal, to ensure Alpha behaviour unlikely.
 Basic approach is frozen, though features open to change.
+May contain debug code, but should be operative.
 
 Release Candidate
 Works with EMACS as expected by an EMACS user.
 Code developed enough for the features unlikly to change.
+Debug code should be formalized.
 
 Release
 A Release Candidate tested enough, preferably externally, to suggest it will perform as the features and user can expect.

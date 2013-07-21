@@ -18,30 +18,24 @@
 ; (load-file "./vala-mode2-syntax.el")
 
 
-(defcustom vala-indent:nesting-definition-to-brackets 2
+(defvar vala-indent:nesting-definition-to-brackets 2
   "The number of spaces from definition to brackets for
 definitions which contain other definitions,
-such as namespaces"
-  :type 'integer
-  :group 'vala)
+such as namespaces")
 
-(defcustom vala-indent:nesting-brackets-to-body 2
+(defvar vala-indent:nesting-brackets-to-body 2
   "The number of spaces from brackets to body,
-such as between class bracketing and method definitions"
-  :type 'integer
-  :group 'vala)
+such as between class bracketing and method definitions")
 
-(defcustom vala-indent:definition-to-brackets 2
+
+(defvar vala-indent:definition-to-brackets 2
   "The number of spaces from definition to bracketing,
-such as in a method"
-  :type 'integer
-  :group 'vala)
+such as in a method")
 
-(defcustom vala-indent:brackets-to-body 2
+(defvar vala-indent:brackets-to-body 2
   "The number of spaces between brackets and a body of code,
-such as in a method"
-  :type 'integer
-  :group 'vala)
+such as in a method")
+
 
 
 
