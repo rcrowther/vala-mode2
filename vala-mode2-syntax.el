@@ -37,7 +37,8 @@
 ;;;   subgroups may exist, C-x C-e (evaluate) to see full details.
 
 
-;; Scala delimiters (Chapter 1), but no quotes
+;; Vala delimiters, but no quotes
+;; deprecated?
 (defconst vala-syntax:delimiter-group ".,;")
 
 
@@ -67,21 +68,6 @@
    "unichar" "float" "double" "string"))
 
 
-;; though conventions exist,
-;; symbols are suspected to be this simple definition.
-(defconst vala-syntax:vala-symbol-raw-re
-  "[A-Za-z_][A-Za-z_0-9]*")
-
-(defconst vala-syntax:vala-symbol-re
- (concat "\\(" vala-syntax:vala-symbol-raw-re "\\)"))
-
-
-;; Code attributes
-(defconst vala-syntax:vala-code-attribute-start-re
-  (concat "\\[\\s *" vala-syntax:vala-symbol-raw-re))
-;(progn (when (looking-at vala-syntax:vala-code-attribute-start-re)
-;(goto-char (match-end 0))))[ Car
-
 
 (defconst vala-syntax:string-literal-delimiter-re
 ;;  "\"\\(?:\\([^\"]\\)\\|\\(\"\"\\)\\)")
@@ -104,6 +90,40 @@
 
 (defconst vala-syntax:block-comment-re
 "/?\\*+\\s *")
+
+(defconst vala-syntax:syntactical-newline-keyword-opt-re
+  (regexp-opt '("new" "throws") 'symbols)
+  "Match keywords which should, for fontlock purposes, act as
+newlines.
+
+This regexp is bound by symbols.")
+;;(looking-at vala-syntax:syntactical-newline-keyword-opt-re)
+
+(defconst vala-syntax:syntactical-newline-re
+  (concat "[;\n]\\|\\(?:" 
+          vala-syntax:syntactical-newline-keyword-opt-re
+          "\\)")
+  "Match anything which should, for fontlock purposes, act as
+newlines")
+;;(progn (when (looking-at vala-syntax:syntactical-newline-re)
+;;(goto-char (match-end 0))))new 
+
+
+;; though conventions exist,
+;; symbols are suspected to be this simple definition.
+(defconst vala-syntax:vala-symbol-raw-re
+  "[A-Za-z_][A-Za-z_0-9]*")
+
+(defconst vala-syntax:vala-symbol-re
+ (concat "\\(" vala-syntax:vala-symbol-raw-re "\\)"))
+
+
+;; Code attributes
+(defconst vala-syntax:vala-code-attribute-start-re
+  (concat "\\[\\s *" vala-syntax:vala-symbol-raw-re))
+;(progn (when (looking-at vala-syntax:vala-code-attribute-start-re)
+;(goto-char (match-end 0))))[ Car
+
 
 
 ;;
@@ -426,6 +446,7 @@
 
 
 ;; Put before regex to account for keyword escapes.
+;; deprecated?
 (defconst vala-syntax:vala-escape-lock-re
   "\\(?:^\\|[^@]\\)")
 
@@ -457,6 +478,7 @@
 
 ;; Match end of code line
 ;; OneOf(space, newline, comment)
+;; deprecated?
 (defconst vala-syntax:end-of-code-line-re
   (concat "\\([ ]\\|$\\|" vala-syntax:line-comment-start-re "\\)")
   "A special regexp that can be concatenated to an other regular
@@ -537,8 +559,9 @@
      (modify-syntax-entry ?\= "." syntab)
 
 
-     ;; _ is a symbol by default, which is ok. Vala accepts _ in most
-     ;; symbols I tried.
+
+     ;; Vala accepts _ in most symbols I tried.
+     ;; set as symbol constituent. 
      (modify-syntax-entry ?\_ "_" syntab)
 
      ;; Ampersand is the Vala symbol-escape character.
@@ -777,7 +800,8 @@ return: t if space was skipped, else f"
 (defun vala-syntax:goto-syntactical-line-start (limit)
   "Goto items regarded as syntactical line starts.
 These include semi-colons, LF, 'new', 'throws' or line-comment starts.
-The function positions itself to read the new text, i.e. after
+The function ignores matches in strings and comments. 
+The function positions point to read the new text, i.e. after
 semi-colon and LF but before a 'new' symbol or line-comment
 start.  Because the function will not skip the keywords, calling
 code must make a move over all circumstances of keywords supplied
@@ -805,7 +829,8 @@ return: t if found one and less than limit, else nil"
                  (nth 3 parse-state)
                  ;; 4 = in a comment
                  (nth 4 parse-state)          
-                 (not (looking-at "[;\n]\\|new\\|throws\\|//")))
+;;                 (not (looking-at "[;\n]\\|new\\|throws\\|//")))
+                 (not (looking-at vala-syntax:syntactical-newline-re)))
                 (forward-char) t)
                (t nil)
                )))))
@@ -824,6 +849,10 @@ return: t if found one and less than limit, else nil"
   (< (point) limit))
 ;;"(vala-syntax:goto-syntactical-line-start (line-end-position))
   ; new"  
+
+(defun vala-syntax:goto-syntactical-line-start-interactive ()
+  (interactive)
+(vala-syntax:goto-syntactical-line-start (point-max)))
 
 (defun vala-syntax:goto-syntactical-line-start2 ()
   (interactive)
@@ -1458,6 +1487,7 @@ checks if the previous character is a backslash escape, which is not itself back
 ;\\c
 ;(vala-syntax:is-escaped-char 48931)
 
+
 (defun vala-syntax:propertize-strings (start end)
   "Add string properties to inverted comma characters in a block of text.
 Ignores text inside comments."
@@ -2016,20 +2046,30 @@ body: if all keyword matching fails, code in this parameter is executed.
            (vala-syntax:pskip-anytyped-definition-parameter-list
             (line-end-position))
            )
-      (t (message " unknown left item %s" (point)))
+          ;; There's no use in fail detection. Any of the above might
+          ;; match, and if they make an unintended match, control
+          ;; never reaches here.
+          (t (message " unknown left item %s" (point))
+         )
      ))))
     )))
 ;(vala-syntax:propertize-from-left (line-end-position))
 ;public
 
-(defun vala-syntax:propertize-from-left2 ()
-(interactive)
-(vala-syntax:propertize-from-left (point-max))
+;; for testing
+;; ensures point movement, and is interactive
+(defun vala-syntax:propertize-from-left-interactive ()
+  (interactive)
+  (vala-syntax:propertize-from-left (point-max))
+  ;;(vala-syntax:propertize-from-left end)
 )
 
-(defun vala-syntax:propertize-from-left-dummy (limit)
+(defun vala-syntax:propertize-from-left-dummy (end)
   (when (looking-at "\\(?:\\(new\\|throws\\)\\|//\\)[ ]+") 
-    (goto-char (match-end 0))))
+    (goto-char (match-end 0)))
+)
+
+
 
 
 (defun vala-syntax:propertize-syntactical-newline (start end)
@@ -2037,6 +2077,7 @@ body: if all keyword matching fails, code in this parameter is executed.
   (while
       (progn
         (vala-syntax:propertize-from-left end)
+       ;; (vala-syntax:propertize-from-left-dummy end)
         (progn
           ;;(message "left propertize %s" (point))
           (vala-syntax:goto-syntactical-line-start end)

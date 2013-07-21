@@ -1,9 +1,11 @@
 == CHANGELOG
+Bug: infinite loops on vapi test file (newline skip identifies symbol parts).
 Viable approch for customizing indents. 
 Add vapi to acceptable filelist.
 Should be called vala-mode2. It's not the first.
 Optional whitespace cleanup? See cc mode... (no, the auto-cleanup function is simple, leave it)
-Fixed the horrible, elusive, "strings cause newline to skip chunks" bug.
+Bug: highlighting fails chunks (horrible, elusive, initial syntax definition identifies strings, causing newline detection to skip).
+License
 Some whitespace cleanup
 Dont highlight strings in attributes? (disagree. ugly, but informative)
 Vala preprocessor directives.
@@ -19,9 +21,10 @@ More sophisticated indenting.
 - Interesting info on indenting styles,
 ;; http://www.riedquat.de/prog/style
 
-Compile info into README
+Tidy Regex - much deprecation
+Regexs need cheching for consistency (define some as symbol?)
 
-Seems to enter infinite loop on vapi test file.
+Add compile info to README
 
 Check tab control (now on hold)
 
@@ -43,7 +46,7 @@ Could have indents on preprocessing directives (make into brackets?)
 
 Some themes for > 8 bit terminals
 
-Code tidy and license
+May be duplication between syntax pskip and indent detection code
 
 Check against coding recommendations.
 
@@ -51,9 +54,7 @@ Is sexp stepping ok?
 
 Maybe some would like a choice about using the semantic face function (especially with what it does to /** inline block comments **/)
 
-Class testing must be the slowest part of this. May be able to cache against brackets? Theres some code in vala-syntax: already for bracket caching.
 
-If bracket/class status is cached, may be more profitable to make newlines into punctuation syntax? 
 
 Some of the new font faces could/should inherit, but I never figured out how to do that *and* alter them.
 
@@ -68,8 +69,11 @@ yes: paragraph
      faces
      fontlock
      indent
-Profiling
 
+== Profiling
+Class testing must be the slowest part of this. May be able to cache against brackets? Theres some code in vala-syntax: already for bracket caching.
+
+If bracket/class status is cached, may be more profitable to make newlines into punctuation syntax? 
 
 == The issue of custom variables
 Variable setting in the mode is inconsistent, not adhering to standards, and haphazard.
