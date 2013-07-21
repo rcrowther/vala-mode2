@@ -6,12 +6,9 @@
 :Version:
   Alpha
 
+Or, the weird one. This is not the comprehensive, standards-savvy, up-to-date mode which Vala, at this point, deserves.
 
-About
-=====
-This is not the comprehensive, standards-savvy, up-to-date mode which Vala, at this point, probably deserves.
-
-However, the author only uses EMACS in  a trivial way, to format and hunt down typographical errors, and has never coded in a LISP before. So he feels little sadness about this, and no regrets.
+However, the author only uses EMACS in  a trivial way, to format and hunt down typographical errors, and has never coded in a LISP before. So he has little sadness, and no regrets.
 
 Knowing very little about EMACs mode coding, and up against Vala's c-family syntax, the author made eccentric decisions. One of these, for example, was not to extend from CC mode (on which 'c-mode', 'java-mode' and several others are based). Without that code, the indentation is crude. But (the author shrugs his shoulders), some of this may turn out to be good for hunting down errors and formatting code. That's what matters.
 
@@ -20,14 +17,14 @@ To Consider
 ===========
 Do not rely on the code, please assess for yourself. Comments are welcome.
 
-The mode works *only* with spaces.
+Please note: the mode was initially designed for use with spaces. Tabbing is in an alpha stage, though tabbed files should display ok.
 
-(conceptually it can work with tabs, but will this not be implemented unless the author uncovers more information on how to configure EMACS)
+(conceptual note: author needs more information on how to configure EMACS)
 
 
 Installation
 ============
-The mode is not in repositories. This mode must be run in EMACS v24 (or above). If you have been using other vala-modes, it may be a good idea to remove them.
+The mode is not in repositories. It must be run in EMACS v24 (or above). If you have been using other vala-modes, it may be a good idea to remove them.
 
 
 1. Download the files, or, ::
@@ -51,7 +48,7 @@ The mode is not in repositories. This mode must be run in EMACS v24 (or above). 
     (add-to-list 'load-path "/path/to/vala-mode2/")
     (require 'vala-mode2)
 
-   Note that the load path line must point to the directory - the search will not probe recursively.
+   Note that the load-path string element must point to the directory - the search will not probe recursively.
    
 There is no way known to the author of loading local directory contents into EMACS interfaces and/or the packaging system. Even when manually loaded, the results will not appear in ``M-x package-list-packages``.
 
@@ -112,7 +109,7 @@ Detects code attributes.
 Comments
 --------
 Comments are in comment-face 
-  (default 'red') Despite the EMACS Lisp background. 
+  (default 'red') ...despite the EMACS Lisp background. 
 
 Block comments must match Valadoc form
   i.e (no text after opening with "/**"). If not, they highlight as strings (default green).
@@ -123,14 +120,35 @@ Verbatim and literal strings
 Full detection of verbatim and literal strings, cross-line. Imbalanced brackets usually spill (occasionally abbreviate) highlighting.
 
 
+Spaces vs. tabs
+---------------
+On the argument of the ages, Vala is a generous language. Code parses, whitespace is whitespace, and there are no guidelines, though source is tabbed.
+
+vala-mode2 can work with either spaces or tabs. A first install of EMACS is likely using tabs. To get spaces only (or reverse modifications) put,::
+
+  ;; Use only spaces (no tabs at all).
+  (setq-default indent-tabs-mode nil)
+
+in an emacs startup file. Or change using the interface,
+
+  C-h v > indent-tabs-mode
+
+Tab width is set with the variable, ::
+
+  tab-width
+
+(to the point...)
+
+
+
 
 .. _Indenting:
 
 Indenting
 ---------
-Currently, the indenting code is simplistic. The code can differentiate between outer/method indents and braces. What it can not do is identify inner code structures such as if..then run-ons (though it does indent throw, and switch statement bodies).
+Currently, the indenting code is simplistic. The code can differentiate between outer/method indents and braces. What it can not do is identify inner code structures such as if..then run-ons (though it does indent 'throw', and 'switch' statement bodies).
 
-Still, it can do some sort of simulation of various styles. See the current setting ::
+Still, it can do some sort of simulation of various styles. To see the current setting ::
 
   C-h > v > vala-indentation-style <stylename>
 
@@ -138,19 +156,17 @@ Change indentation style, ::
 
   M-x customize-mode > vala
 
-A preset can be selected or, if 'custom' is selected, indents can be set by hand. 
+From there, a preset can be selected or, if 'custom' is selected, indents can be set directly. 
  
   M-x vala-set-style <stylename>
 
-``stylename`` is a short descriptive string.
-
-To see valid entries for this function, and how they indent, use the customize interface or look in the file vala-style.el for the function vala-style:presets. The current list is,::
+``stylename`` is a short descriptive string. To see valid entries for this function, and how they indent, use the customize interface or look in the file 'vala-style.el' for the function 'vala-style:presets'. The current list is,::
 
   gnu, 1tbs, k&r, allman, stroudstrup, whitesmith, linux, ais
 
-All the common styles are rough approximations, not guarenteed formatting. 'ais' is an invented style - 'as if syntax' - which treats brackets as syntax and indent 2 spaces everywhere.
+All the common styles are rough approximations, not guaranteed formatting. 'ais' is an invented style - 'as if syntax' - which treats brackets as syntax and indents 2 spaces everywhere.
 
-Yhe customization interface is recommended, and other methods (e.g. progamatic) are currently undefined.
+The customization interface is recommended. Other methods (e.g. progamatic) have undefined or untested behaviour.
 
 
 Fill functions
@@ -173,14 +189,14 @@ The cleanup code is always on, can not be switched off.
 
 Notes for Emacs hackers and fans
 ================================
-This mode is low on syntax detection. It can also be expensive on CPU time. If anyone wants it faster, likely it can be made faster.
+This mode is low on syntax detection. It can be expensive on CPU time. If anyone wants it faster, likely it can be made faster.
 
-Somewhat unusually, the mode will (except in strings and block comments) stop highlighting whenever it doesn't understand something. And, in general, it reacts to Just-In-Time re-highlighting. The mode should not often cause "EMACS went wrong".
+Somewhat unusually, the mode will (except in strings and block comments) stop highlighting whenever it fails to understand syntax. And, in general, it reacts to Just-In-Time re-highlighting. The mode should not often cause "EMACS went wrong".
 
 
 Beat the mode
 =============
-A diverting and EMACS-instructive pastime is to try confusing modes with code that legitimately passes a language parser, or passes the mode but fails a parser. For vala-mode2, try, ::
+A diverting and EMACS-instructive pastime is to try confusing modes with code which legitimately passes a language parser, or passes the mode but fails a parser. For vala-mode2, try, ::
 
   "He's just—nae better than he should be"""
 
@@ -200,7 +216,7 @@ A diverting and EMACS-instructive pastime is to try confusing modes with code th
 
 Help
 ====
-There is still plenty of development code in the mode, and some non-working/semi-developed, semi-obscured features. So do not rely on the results of the following common EMACS commands.
+There is still plenty of development code in the source, and some non-working/semi-developed, semi-obscured features. So do not rely on the results of the following common EMACS commands.
 
 For information, try 'describe-mode', ::
 
@@ -226,12 +242,12 @@ There's a TODO (with rough CHANGELOG and MAYBEPATH) in source but, publicly,
 - The mode would be far more interesting if it handled tabs
 - Many will want some sophistication added to the indenting
 - The options and customization need help
-- Color schemes for > 8 bit terminals would be nice.
+- Colour schemes for > 8 bit terminals would be nice.
 
 
 Acknowlegements
 ===============
-This code started as a hack of scala-mode2 (umm, yes it was). Though this should not be taken as a guide to the quality of this code.
+This code started as a hack of scala-mode2 (umm, yes it was). These origins should not be taken as a guide to the quality of this code.
 
 A couple of scala-mode2 ideas are still in there, such as the concatenating of comment list markup. Interesting mode, scala-mode2. 
 

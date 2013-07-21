@@ -78,7 +78,7 @@ When started, runs `vala-mode2-hook'.
    'comment-multi-line
   ;; 'forward-sexp-function
    'indent-line-function
-   'indent-tabs-mode
+   ;;'indent-tabs-mode
    'vala-indentation-style)
 
 
@@ -122,7 +122,9 @@ When started, runs `vala-mode2-hook'.
 
         ;;forward-sexp-function           'vala-mode2:forward-sexp-function
         indent-line-function            'vala-indent:indent-line
-        indent-tabs-mode                nil
+;;        indent-tabs-mode                nil
+     ;;   indent-tabs-mode                t
+	;; tab-width
         )
 ;; (use-local-map vala-mode2-map)
 ;;  (define-key c-mode-base-map "\C-c."     'c-set-style)

@@ -86,25 +86,25 @@
 "\\(?:\\*+\\|\\(?:/\\(\\*+\\|/+\\)\\)\\)\\s *")
 
 (defconst vala-syntax:line-comment-re
-"//+\\s *")
+  "//+\\s *")
 
 (defconst vala-syntax:block-comment-re
-"/?\\*+\\s *")
+  "/?\\*+\\s *")
 
 (defconst vala-syntax:syntactical-newline-keyword-opt-re
   (regexp-opt '("new" "throws") 'symbols)
-  "Match keywords which should, for fontlock purposes, act as
-newlines.
-
-This regexp is bound by symbols.")
+  "Match keywords defined, for propertizing purposes, as
+newlines. This regexp is bound by symbols.")
 ;;(looking-at vala-syntax:syntactical-newline-keyword-opt-re)
 
 (defconst vala-syntax:syntactical-newline-re
-  (concat "[;\n]\\|\\(?:" 
+  (concat "[;\n]\\|//\\|\\(?:" 
           vala-syntax:syntactical-newline-keyword-opt-re
           "\\)")
-  "Match anything which should, for fontlock purposes, act as
-newlines")
+  "Match anything defined, for propertizing purposes, as
+newlines. Includes semi-colon, form-feed, dual
+forward-slash (i.e. single line comments) and the symbols 'new',
+'throws'")
 ;;(progn (when (looking-at vala-syntax:syntactical-newline-re)
 ;;(goto-char (match-end 0))))new 
 

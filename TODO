@@ -24,22 +24,15 @@ More sophisticated indenting.
 Tidy Regex - much deprecation
 Regexs need cheching for consistency (define some as symbol?)
 
-Add compile info to README
+
 
 Check tab control (now on hold)
 
 Enum methods not highlighting
 
-Indent code is not giving right indents at right places?
+Indent code is not giving correct indent types at right places?
 
 Test permanent saves of indent style customization.
-
-Three highlight modes:
-This now somewhat abandoned functionality could be interesting in this mode, not for peformance reasons, but for "levels of highlighting", e.g.
-3 full
-2 comments/keywords (maybe comments/OO definitions)
-1 comments only
-But I'm not going to read that page again, right now. Besides, due to the extensive use of syntax parsing calls, it involves tracking down the forntlock variables so the parsing can work from them (low priority). 
 
 
 Could have indents on preprocessing directives (make into brackets?)
@@ -60,7 +53,7 @@ Some of the new font faces could/should inherit, but I never figured out how to 
 
 The is-... functions should probably be renamed as ...-p finctions.
 
-Compiling
+== Compiling
 no:
 
 yes: paragraph
@@ -69,6 +62,19 @@ yes: paragraph
      faces
      fontlock
      indent
+
+Add compile info to README
+
+== highlighting
+Stray highlighlighting- see bottom of .vapi test file
+
+Three highlight modes:
+This now somewhat abandoned functionality could be interesting in this mode, not for peformance reasons, but for "levels of highlighting", e.g.
+3 full
+2 comments/keywords (maybe comments/OO definitions)
+1 comments only
+But I'm not going to read that page again, right now. Besides, due to the extensive use of syntax parsing calls, it involves tracking down the forntlock variables so the parsing can work from them (low priority). 
+
 
 == Profiling
 Class testing must be the slowest part of this. May be able to cache against brackets? Theres some code in vala-syntax: already for bracket caching.
@@ -107,12 +113,15 @@ Once we were through this, there is the problem that the mode shoud react to ind
 
 There comes a point where it is not worth fighting with a system because the gains are too small. If some part of the information I hold grows in some more fertile way, than perhaps the mode will progress.
 
+---------------------
+EMACS organises space/tabbing by taking requested indents, checking variables to see if it can use tabs, and if it can, using them. Differences are padded out using spaces. This works rather badly with our current, rigid, multiple-spacing, preset indentation styles.
+
 
 == MAYBEPATH
 Draft
 No testing.
 Features considered, code sketched out. 
-May contain debug code, but should be operative.
+May contain intrusive debug code, but should be operative.
 
 Alpha
 Only basic testing. May yet turn a buffer green, or a fill may collapse a whole file.
