@@ -36,13 +36,28 @@ such as in a method")
   "The number of spaces between brackets and a body of code,
 such as in a method")
 
+(defun vala-indent:get-indent (var-name)
+  "Get the indent for <VARNAME>.
+This function tests for tab settings, and adjusts the indent
+width accordingly, altering tab distances to tab-with if tabs
+have been selected.
+
+Indent settings should always be accessed through this function,
+never directly.
+
+<VARNAME> is one of the custom variables for indent settings.
+"
+  (let ((var-value (symbol-value var-name)))
+    (if indent-tabs-mode 
+        (if (> var-value 0) tab-width 0)
+      var-value)))
+;;(vala-indent:get-indent 'vala-indent:brackets-to-body)
 
 
 
 ;;;
 ;;; Info gathering
 ;;;
-
 
 (defun vala-indent:get-indent-from-container (from-line-indent
                                               from-bracket-indent)
@@ -98,7 +113,7 @@ returns: any additional indent. Always positive numeric"
                     (< (skip-syntax-backward "w_'") 0)))
              (cond
               ((looking-at "switch")
-               vala-indent:nesting-brackets-to-body     
+               (vala-indent:get-indent 'brackets-to-body)     
                )
               ;; TOCONSIDER: More indent sublties maybe here
               (t 0)
@@ -138,11 +153,11 @@ cannot be determined."
       (if (match-beginning 1)
                                         ;(message "guessed in comment indent -%s-" (point))
           (vala-indent:get-indent-from-container
-           vala-indent:nesting-definition-to-brackets
-           vala-indent:nesting-brackets-to-body)
+           (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
+           (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body))
         (+ (vala-indent:get-indent-from-container
-            vala-indent:nesting-definition-to-brackets
-            vala-indent:nesting-brackets-to-body) 1)))
+            (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
+            (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body)) 1)))
      
 
      ;;TOCONSIDER: parameter mods woyuld probably go here?
@@ -151,40 +166,40 @@ cannot be determined."
      ((or (= (char-after) ?\()  (= (char-after) ?\{))
       ;;TODO: If runon stategy, must check behind bracket too.
       (+ (vala-indent:get-indent-from-container
-          vala-indent:nesting-definition-to-brackets
-          vala-indent:nesting-brackets-to-body)
-         vala-indent:definition-to-brackets))
+          (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
+          (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body))
+         (vala-indent:get-indent 'vala-indent:definition-to-brackets)))
 
      ;; close brackets
      ((or (= (char-after) ?\)) (= (char-after) ?\}))
       ;; forward-char gets out of the brackets into surrounding area.
       (forward-char)
       (+ (vala-indent:get-indent-from-container
-          vala-indent:nesting-definition-to-brackets
-          vala-indent:nesting-brackets-to-body)
-         vala-indent:definition-to-brackets
+          (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
+          (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body))
+         (vala-indent:get-indent 'vala-indent:definition-to-brackets)
          ))
 
      ((looking-at "throws")
       ;; special effort for the one outer multi-statement construct
       (+ (vala-indent:get-indent-from-container
-          vala-indent:nesting-definition-to-brackets
-          vala-indent:nesting-brackets-to-body)
-         vala-indent:definition-to-brackets))
+          (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
+          (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body))
+         (vala-indent:get-indent 'vala-indent:definition-to-brackets)))
 
      ;;not in comments or brackets
      ((vala-syntax:is-syntax-class-inheritance-item)
       ;;(goto-char (line-beginning-position))
       (+ (vala-indent:get-indent-from-container
-          vala-indent:nesting-definition-to-brackets
-          vala-indent:nesting-brackets-to-body)
-         vala-indent:definition-to-brackets))
+          (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
+          (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body))
+         (vala-indent:get-indent 'vala-indent:definition-to-brackets)))
 
      ((vala-syntax:is-syntax-function-or-class-declaration)
       ;; declarations
       (vala-indent:get-indent-from-container
-       vala-indent:nesting-definition-to-brackets
-       vala-indent:nesting-brackets-to-body))
+       (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
+       (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body)))
 
      (t
      (message "guessed in body indent -%s-" 
@@ -192,8 +207,8 @@ cannot be determined."
       ;; bodies
       (+ (vala-indent:get-body-indent-modifications-from-base)
          (vala-indent:get-indent-from-container
-          vala-indent:definition-to-brackets
-          vala-indent:nesting-brackets-to-body)
+          (vala-indent:get-indent 'vala-indent:definition-to-brackets)
+          (vala-indent:get-indent 'vala-indent:brackets-to-body))
          )))
     ))
 

@@ -12,6 +12,9 @@
 
 ;;; Code:
 
+
+;; Indenting variables need only to define requets for SPACE
+;; mode. Vala-indent handles conversions needed for TAB mode.
 (defvar vala-style:presets
   '(("gnu"
         (vala-indent:nesting-definition-to-brackets . 0)
@@ -92,18 +95,6 @@ For debugging"
            vala-indent:brackets-to-body))
 
 
-(defun vala-style:set-buffer-indents-to-tab (tab-width)
-  (mapc
-   (lambda (indent-var)
-     (set indent-var (if (= (symbol-value indent-var) 0) 0 tab-width)))
-   (list
-    'vala-indent:nesting-definition-to-brackets
-    'vala-indent:nesting-brackets-to-body
-    'vala-indent:definition-to-brackets
-    'vala-indent:brackets-to-body
-    )))
- 
-
 
 (defun vala-style:set-buffer-data-from-style (style-name)
   "Set style data for the current buffer.
@@ -143,12 +134,8 @@ This is a dry function, not for external use."
 	;; set as space
 	(mapc
 	 (lambda (keyval) (set (car keyval) (cdr keyval)))
-	 (cdr style-data))))
-    ;; if necessary, convert to tab
-    (when calculated-tab-width
-      (message "  cchange indents to tabs!")
-      (vala-style:set-buffer-indents-to-tab calculated-tab-width))
-    ))
+	 (cdr style-data))))))
+    
 
 
 ;;
@@ -161,10 +148,6 @@ This is a dry function, not for external use."
   (set option-name value)
   (vala-style:set-buffer-data-from-style value))
 
-;; TODO: attempts to provide defcustom variable fail to provide
-;; suitable list for filtering. Conclude: without suitable
-;; documentation, Customize interface does not want us to use
-;; it. Unsatisfactory but logical result.
 
 (defcustom vala-indentation-style "gnu"
   "Set the style to style STYLENAME.

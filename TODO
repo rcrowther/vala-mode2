@@ -1,4 +1,6 @@
 == CHANGELOG
+Tabs can be switched on fly
+Feature: source file tabbing detection
 Tab control unlocked
 Bug: infinite loops on vapi test file (newline skip identifies symbol parts).
 Viable approch for customizing indents. 
@@ -23,7 +25,7 @@ More sophisticated indenting.
 ;; http://www.riedquat.de/prog/style
 
 Tidy Regex - much deprecation
-Regexs need cheching for consistency (define some as symbol?)
+Check regexps for consistency (define some as symbol?)
 
 
 Tab control needs indents fixing when operative. Or something.
@@ -31,9 +33,6 @@ Tab control needs indents fixing when operative. Or something.
 
 Enum methods not highlighting
 
-Indent code is not giving correct indent types at right places?
-
-Test permanent saves of indent style customization.
 
 
 Could have indents on preprocessing directives (make into brackets?)
@@ -53,6 +52,15 @@ Maybe some would like a choice about using the semantic face function (especiall
 Some of the new font faces could/should inherit, but I never figured out how to do that *and* alter them.
 
 The is-... functions should probably be renamed as ...-p finctions.
+
+== Tabs
+For new files, Indent should default to indent-tabs-mode
+
+Indent code is not giving correct indent types at right places?
+
+Test permanent saves of indent style customization.
+ 
+
 
 == Compiling
 no:

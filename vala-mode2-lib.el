@@ -15,9 +15,7 @@
 
 (defun vala-lib:buffer-has-tabs-p ()
   "Is buffer indented with spaces or tabs?
-return: nill if SPACE, t if TAB. Default (scan reaches buffer
-end) is nil."
-(interactive)
+return: 2 = TAB, 1 = SPACE, 0 = Undetermined"
   (save-excursion
     (goto-char (point-min))
     (while (not (or
@@ -30,7 +28,12 @@ end) is nil."
                  ;; good enough for Vala.
                  (looking-at "[ ]+\\sw")))
       (forward-line))
-    (eq (char-after) ?\t)))
-;;(vala-lib:buffer-has-tabs-p)
+    (cond 
+     ((eobp) 0)
+     ((eq (char-after) ?\t) 2)
+     (t 1))
+    ))
+;  fio
+;(vala-lib:buffer-has-tabs-p)
 
 (provide 'vala-mode2-lib)

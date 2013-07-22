@@ -127,16 +127,25 @@ When started, runs `vala-mode2-hook'.
         ;;indent-tabs-mode                nil
      ;;   indent-tabs-mode                t
         ;; set this to the detection of space or tab
-        indent-tabs-mode                (vala-lib:buffer-has-tabs-p)
+        indent-tabs-mode                (progn
+                                          (let ((ident-type (vala-lib:buffer-has-tabs-p)))
+                                          (cond
+                                           ((= ident-type 0)
+                                            ;; undefined
+                                            (message "undefined indent style")
+                                            (default-value indent-tabs-mode)) 
+                                           ((= ident-type 1) nil) ; space
+                                           ((= ident-type 2) t) ; tabs
+                                           )))
 	;; tab-width
         )
 ;;  (message "tabs -%s-" (vala-lib:buffer-has-tabs-p))
   ;; Put a message up
   (message "Indent style detected: -%s-"
-           (if (null indent-tabs-mode) "TAB" "SPACE"))
-
-  ;; TODO: need to change the tab style internally here, as the
-  ;; variables were previously altered.
+           (if (null indent-tabs-mode) "SPACE" "TAB"))
+  (message "  indents: -%s-" (vala-style:print-indents))
+  ;; TODO: need to change the tab internal style variables here, as the
+  ;; variables were initialised long previously.
 
 ;; (use-local-map vala-mode2-map)
 ;;  (define-key c-mode-base-map "\C-c."     'c-set-style)

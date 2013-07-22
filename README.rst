@@ -124,20 +124,45 @@ Spaces vs. tabs
 ---------------
 On the argument of the ages, Vala is a generous language. Code parses, because whitespace is whitespace, and there are no guidelines, though source is tabbed.
 
-vala-mode2 can work with either spaces or tabs. A first install of EMACS is likely using tabs. To get spaces only (or reverse modifications) put,::
+vala-mode2,
+- detects if a file has been written using tabs or spaces (it looks at the first likely line beginning).
+- can change to tabs or spaces on the fly (but seee below for how)
+ 
+vala-mode2 ought to work with either spaces or tabs. A first install of EMACS is likely using tabs. In general, to get spaces only (or reverse modifications) put,::
 
   ;; Use only spaces (no tabs at all).
   (setq-default indent-tabs-mode nil)
 
-in an emacs startup file. Or change using the interface,
+in an emacs startup file. Or change using the interface, ::
 
-  C-h v > indent-tabs-mode
+
+  M-x customize-mode > vala > indent-tabs-mode
+
+But remember vala-mode2 will try to detect the tab mode of a file, so this default will only apply to new, or the occasionally undetectable, file.
+
+
+To change the tab mode immediately, use,
+
+  M-x set-variable > indent-tabs-mode
+
+The customizable interface is probably not what you want. It changes the default tab mode but, despite appearances, not the current buffer,::
+
+  C-h v > indent-tabs-mode > customize > indent-tabs-mode
+
+or,::
+
+  M-x customize-mode > vala > indent-tabs-mode
+
+If changed for the session, this will change default for any file subsequently *opened* in the same session.
+
+
+
 
 Tab width is set with the variable, ::
 
   tab-width
 
-(to the point...)
+If altered on the fly, vala-mode2 simply starts tabbing with the new width.
 
 
 
@@ -152,11 +177,11 @@ Still, it can do some sort of simulation of various styles. To see the current s
 
   C-h > v > vala-indentation-style <stylename>
 
-Change indentation style, ::
+vala-mode2 can change styles on the fly (which is either fun or frustrating, depends if what you want is there). Change indentation style, ::
 
   M-x customize-mode > vala
 
-From there, a preset can be selected or, if 'custom' is selected, indents can be set directly. 
+From there, a preset can be selected or, if 'custom' is selected, indents can be set directly. ::
  
   M-x vala-set-style <stylename>
 
@@ -164,7 +189,7 @@ From there, a preset can be selected or, if 'custom' is selected, indents can be
 
   gnu, 1tbs, k&r, allman, stroudstrup, whitesmith, linux, ais
 
-All the common styles are rough approximations, not guaranteed formatting. 'ais' is an invented style - 'as if syntax' - which treats brackets as syntax and indents 2 spaces everywhere.
+All the common styles are rough approximations, not guaranteed formatting. 'ais' is an invented style - 'as if syntax' - brackets are treated as syntax and the indent is 2 spaces everywhere.
 
 The customization interface is recommended. Other methods (e.g. progamatic) have undefined or untested behaviour.
 
