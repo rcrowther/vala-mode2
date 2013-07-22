@@ -79,6 +79,10 @@
 (defconst vala-syntax:comment-re
 "\\(?:/?\\*+\\|//\\)\\s *")
 
+;;(defconst vala-syntax:insignificant-line
+;;  (concat vala-syntax:comment-re "\\|\\s *$")
+;;"matches comment and empty lines")
+
 ;; matches comments, with the special magic that
 ;; if the line is the first line of a block, group 1 will
 ;; be matched.

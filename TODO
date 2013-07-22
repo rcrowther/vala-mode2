@@ -1,4 +1,5 @@
 == CHANGELOG
+Tab control unlocked
 Bug: infinite loops on vapi test file (newline skip identifies symbol parts).
 Viable approch for customizing indents. 
 Add vapi to acceptable filelist.
@@ -25,8 +26,8 @@ Tidy Regex - much deprecation
 Regexs need cheching for consistency (define some as symbol?)
 
 
+Tab control needs indents fixing when operative. Or something.
 
-Check tab control (now on hold)
 
 Enum methods not highlighting
 

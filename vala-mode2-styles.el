@@ -92,6 +92,19 @@ For debugging"
            vala-indent:brackets-to-body))
 
 
+(defun vala-style:set-buffer-indents-to-tab (tab-width)
+  (mapc
+   (lambda (indent-var)
+     (set indent-var (if (= (symbol-value indent-var) 0) 0 tab-width)))
+   (list
+    'vala-indent:nesting-definition-to-brackets
+    'vala-indent:nesting-brackets-to-body
+    'vala-indent:definition-to-brackets
+    'vala-indent:brackets-to-body
+    )))
+ 
+
+
 (defun vala-style:set-buffer-data-from-style (style-name)
   "Set style data for the current buffer.
 STYLENAME must be an existing Vala Mode style. The current list
@@ -104,6 +117,7 @@ This is a dry function, not for external use."
   (let (
         (style-data (assoc style-name vala-style:presets))
         (style-used style-name)
+	(calculated-tab-width (if (null indent-tabs-mode) nil tab-width))
         )
     ;; ensure data
     (when (null style-data)
@@ -125,9 +139,16 @@ This is a dry function, not for external use."
                 vala-custom-brackets-to-body)
           )
       ;; ...else, set from preset data
-      (mapc
-       (lambda (keyval) (set (car keyval) (cdr keyval)))
-       (cdr style-data)))))
+      (progn
+	;; set as space
+	(mapc
+	 (lambda (keyval) (set (car keyval) (cdr keyval)))
+	 (cdr style-data))))
+    ;; if necessary, convert to tab
+    (when calculated-tab-width
+      (message "  cchange indents to tabs!")
+      (vala-style:set-buffer-indents-to-tab calculated-tab-width))
+    ))
 
 
 ;;

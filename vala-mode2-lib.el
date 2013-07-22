@@ -11,4 +11,26 @@
     (unless (bolp)
       (delete-char (- (line-end-position) (point))))))
 
+
+
+(defun vala-lib:buffer-has-tabs-p ()
+  "Is buffer indented with spaces or tabs?
+return: nill if SPACE, t if TAB. Default (scan reaches buffer
+end) is nil."
+(interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (not (or
+                 (eobp)
+                 (eq (char-after) ?\t)
+                 ;; quit scanning if a line with space and a word
+                 ;; syntax character is found. This would be lines
+                 ;; with declarations on them, for example, but not
+                 ;; lines with comments. Hopefully this heuristic is
+                 ;; good enough for Vala.
+                 (looking-at "[ ]+\\sw")))
+      (forward-line))
+    (eq (char-after) ?\t)))
+;;(vala-lib:buffer-has-tabs-p)
+
 (provide 'vala-mode2-lib)

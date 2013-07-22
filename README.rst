@@ -17,9 +17,9 @@ To Consider
 ===========
 Do not rely on the code, please assess for yourself. Comments are welcome.
 
-Please note: the mode was initially designed for use with spaces. Tabbing is in an alpha stage, though tabbed files should display ok.
+*Please note:* the mode was initially designed using space-indenting.  Though tabbed files should display ok, tabbing is in an alpha state.
 
-(conceptual note: author needs more information on how to configure EMACS)
+(author note: need more information on how to configure EMACS...)
 
 
 Installation
@@ -122,7 +122,7 @@ Full detection of verbatim and literal strings, cross-line. Imbalanced brackets 
 
 Spaces vs. tabs
 ---------------
-On the argument of the ages, Vala is a generous language. Code parses, whitespace is whitespace, and there are no guidelines, though source is tabbed.
+On the argument of the ages, Vala is a generous language. Code parses, because whitespace is whitespace, and there are no guidelines, though source is tabbed.
 
 vala-mode2 can work with either spaces or tabs. A first install of EMACS is likely using tabs. To get spaces only (or reverse modifications) put,::
 

@@ -27,6 +27,7 @@
 (require 'vala-mode2-paragraph)
 (require 'vala-mode2-indent)
 (require 'vala-mode2-fontlock)
+(require 'vala-mode2-lib)
 
 ;; Tested only for emacs 24
 (unless (<= 24 emacs-major-version)
@@ -78,7 +79,8 @@ When started, runs `vala-mode2-hook'.
    'comment-multi-line
   ;; 'forward-sexp-function
    'indent-line-function
-   ;;'indent-tabs-mode
+   ;; ensure this is local (sometimes it is, sometimes not)
+   'indent-tabs-mode
    'vala-indentation-style)
 
 
@@ -122,10 +124,20 @@ When started, runs `vala-mode2-hook'.
 
         ;;forward-sexp-function           'vala-mode2:forward-sexp-function
         indent-line-function            'vala-indent:indent-line
-;;        indent-tabs-mode                nil
+        ;;indent-tabs-mode                nil
      ;;   indent-tabs-mode                t
+        ;; set this to the detection of space or tab
+        indent-tabs-mode                (vala-lib:buffer-has-tabs-p)
 	;; tab-width
         )
+;;  (message "tabs -%s-" (vala-lib:buffer-has-tabs-p))
+  ;; Put a message up
+  (message "Indent style detected: -%s-"
+           (if (null indent-tabs-mode) "TAB" "SPACE"))
+
+  ;; TODO: need to change the tab style internally here, as the
+  ;; variables were previously altered.
+
 ;; (use-local-map vala-mode2-map)
 ;;  (define-key c-mode-base-map "\C-c."     'c-set-style)
   ;; add indent functionality to some characters
