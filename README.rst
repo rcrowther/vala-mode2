@@ -212,6 +212,18 @@ The mode cleans up some whitespace as the buffer is modified. Every time a line 
 The cleanup code is always on, can not be switched off.
 
 
+Compiling
+=========
+The mode works a little faster if compiled. Use the Makefile, ::
+
+make
+
+and, ::
+
+make clean
+
+
+
 Notes for Emacs hackers and fans
 ================================
 This mode is low on syntax detection. It can be expensive on CPU time. If anyone wants it faster, likely it can be made faster.
