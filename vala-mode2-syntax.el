@@ -101,8 +101,12 @@
 newlines. This regexp is bound by symbols.")
 ;;(looking-at vala-syntax:syntactical-newline-keyword-opt-re)
 
+(defconst vala-syntax:non-empty-line-grouped-re
+  "\\(?:[;\n][ ]*[^;\n]\\)")
+
 (defconst vala-syntax:syntactical-newline-re
-  (concat "[;\n]\\|//\\|\\(?:" 
+  (concat vala-syntax:non-empty-line-grouped-re
+          "\\|//\\|\\(?:" 
           vala-syntax:syntactical-newline-keyword-opt-re
           "\\)")
   "Match anything defined, for propertizing purposes, as
@@ -706,15 +710,20 @@ return: t if space was skipped, else f"
 ;(vala-syntax:skip-char-tab-space-and-line-ends)
 
 
+;; much used, expensive?
+;; inline has little effect
 (defun vala-syntax:goto-syntactical-line-start (limit)
   "Goto items regarded as syntactical line starts.
 These include semi-colons, LF, 'new', 'throws' or line-comment starts.
-The function ignores matches in strings and comments. 
+The function ignores matches in strings and comments, and skips newlines.
+ 
 The function positions point to read the new text, i.e. after
 semi-colon and LF but before a 'new' symbol or line-comment
-start.  Because the function will not skip the keywords, calling
-code must make a move over all circumstances of keywords supplied
-to this function, otherwise parsing will step into an infinite
+start.
+
+Because the function will not skip keywords, calling
+code must make a move over all keyword points returned supplied
+by this function, otherwise parsing will step into an infinite
 loop.
 return: t if found one and less than limit, else nil"
   ;; Since the scan has been done, it would seem a good idea to use it,
@@ -737,34 +746,28 @@ return: t if found one and less than limit, else nil"
                  ;; 3 = in a string
                  (nth 3 parse-state)
                  ;; 4 = in a comment
-                 (nth 4 parse-state)          
-;;                 (not (looking-at "[;\n]\\|new\\|throws\\|//")))
+                 (nth 4 parse-state)
+                 ;; the regexp skips empty lines.
                  (not (looking-at vala-syntax:syntactical-newline-re)))
                 (forward-char) t)
                (t nil)
                )))))
   ;; nudge over LF and semi-colon
-  (when (looking-at "\\(?:;\\(?:[ ]*\n\\)?\\)\\|\n")
-    (goto-char (match-end 0)))
-  ;;(when (or (= (char-after) ?\n) (= (char-after) ?\;))
-    ;;(forward-char)
-   ;; )
- ;; (if (< (point) limit)
+  (when (or (= (char-after) ?\n) (= (char-after) ?\;))
+    (forward-char))
+
   ;;(message "ok at point %s" (point)))
 ;;(message "quit at point %s" (point))
 ;;  (message " limit at quit %s" limit))
   (< (point) limit))
 ;;"(vala-syntax:goto-syntactical-line-start (line-end-position))
-  ; new"  
+  ; new"
 
-(defun vala-syntax:goto-syntactical-line-start-interactive ()
-  (interactive)
-(vala-syntax:goto-syntactical-line-start (point-max)))
+;; (defun vala-syntax:goto-syntactical-line-start-interactive ()
+;;   (interactive)
+;;   (vala-syntax:goto-syntactical-line-start (point-max)))
 
-(defun vala-syntax:goto-syntactical-line-start2 ()
-  (interactive)
-(vala-syntax:goto-syntactical-line-start (point-max))
-)
+
 (defun vala-syntax:look-backward-p (re)
   (save-excursion
     (while (not (or (bobp)
@@ -918,36 +921,36 @@ return: t if matched, else nil"
   (vala-syntax:look-backward-p "class")
   )
 
-
+;; Much used,
+;; profiling suggests about 1/8 of total scantime.
 (defun vala-syntax:preceeded-by-class-definition-p ()
-  "Check point is somewhere within a class definition.
+  "Check point is somewhere within the syntax of a class definition.
 The algorithm is to sexp back, looking for the word 'class'.
-The function fails if the bracketting level changes, or bobp appears.
+The function fails on all bracketing, or bobp appears.
+
+Used for detecting inheritance lists.
 return: t if matched, else nil"
   (save-excursion
-    ;; This error block catches any changes in bracketing level
+    ;; This error block catches any move up in bracketing level
     (ignore-errors
-    ;; We need to fail on semi-colon, and curly/round bracketing.
-    ;; Stepping back by sexps is not helpful here, as these are 
-    ;; marked as punctuation, so will be skipped.
-    ;; This do...until loop steps backwards before trying any tests.
-    (while (progn
-            (backward-sexp)
-            (not (or
-                 (bobp)
-                 ;; (= (char-after) ?\;)
-                 ;; (= (char-after) ?\})
-                 ;; (= (char-after) ?\{)
-                 ;; (= (char-after) ?\))
-                 ;; (= (char-after) ?\()
-                 (looking-at "class"))))
-     ; (message " class definition sexp -%s-" (buffer-substring (point) (+ (point) 1)))
-      )
-    (looking-at "class"))))
+      ;; Can't fail on semi-colon, marked as punctuation, so skipped
+      ;; by sexp. However, can stop on bracketing.
+
+      ;; This do...until loop steps backwards before trying any tests.
+      (while (progn
+               (backward-sexp)
+               (not (or
+                     (bobp)
+                     ;; fail on curly/round brackets too. Must have sexped
+                     ;; over a code block.
+                     (looking-at "(\\|{\\|class"))))
+        )
+      (looking-at "class"))))
 ; protect class boop.frog<> : 
 ;dark
 ;(progn (forward-line -2)
 ; (vala-syntax:preceeded-by-class-definition-p))
+
 
 
 ;; used by indent
@@ -976,7 +979,7 @@ return: t if matched, else nil"
 
 
 (defun vala-syntax:class-or-class-level-definition-p ()
-  "test if in a class definition, or a definition within a class code block.
+  "test if in class definition code, or a definition within a class code block.
 It ignores (char-based) line ends in a search to test for a class
 declaration.
 The function will return true for positions after a class declaration
@@ -991,52 +994,54 @@ return:
 3 if it passed by moving out of both kinds of brackets,
 else nil"
   (save-excursion
-        (let (
-              (test-point (point))
-              (return-code 0)
-              (open-parenthesis nil)
-              )
-   ;; (message " class definition test: -%s-" (vala-syntax:buffer-narrowed-p))
-   ;; (message " class definition test: -%s-" (point))
-          (cond 
-           ;; if at top level, return true
-           ;; 0 = depth of parentheses
-         ;;  ((< (nth 0 (syntax-ppss (point))) 1) t)
-           ;; if in a comment, return false
-           ;; 4 = in comment
-           ((nth 4 (syntax-ppss (point))) nil)
-           (t 
-            ;; test for an open curved parenthesis. If so, jump back and
-            ;; out. This takes us out of parameter lists. It means
-            ;; little if we back out of a condition, for example,
-            ;; but if we back out of a method parameter list, the next
-            ;; test will make this return true, i.e. this function returns
-            ;; true for method parameter lists.
-            ;; 1 = start of parentheses
-            (setq open-parenthesis (nth 1 (syntax-ppss test-point)))
-          (when open-parenthesis
-            (goto-char open-parenthesis)
-            (when (= (char-after) ?\()
-              (setq return-code 1)
-              (setq test-point (point))))
+    (let (
+          (test-point (point))
+          (return-code 0)
+          (open-parenthesis nil)
+          )
+      ;; (message " class definition test: -%s-" (vala-syntax:buffer-narrowed-p))
+      ;; (message " class definition test: -%s-" (point))
+      (cond 
+       ;; if at top level, return true
+       ;; 0 = depth of parentheses
+       ;;  ((< (nth 0 (syntax-ppss (point))) 1) t)
+       ;; if in a comment, return false
+       ;; 4 = in comment
+       ((nth 4 (syntax-ppss (point))) nil)
+       (t 
+        ;; test for an open curved parenthesis. If so, jump back and
+        ;; out. This takes us out of parameter lists. It means
+        ;; little if we back out of a condition, for example,
+        ;; but if we back out of a method parameter list, the next
+        ;; test will make this return true, i.e. this function returns
+        ;; true for method parameter lists.
+        ;; 1 = start of parentheses
+        (setq open-parenthesis (nth 1 (syntax-ppss test-point)))
+        (when open-parenthesis
+          (goto-char open-parenthesis)
+          (when (= (char-after) ?\()
+            (setq return-code 1)
+            (setq test-point (point))))
+;;(message " class definition test-point1: -%s-" test-point)
+        ;; test for an open curly parenthesis. If so, jump back and
+        ;; out. This takes us out of a code block.
+        (setq open-parenthesis (nth 1 (syntax-ppss test-point)))
+        (when open-parenthesis
+          (goto-char open-parenthesis)
+          (when (= (char-after) ?\{)
+            (setq return-code (+ return-code 2))
+            (setq test-point (point))))
 
-          (setq open-parenthesis (nth 1 (syntax-ppss test-point)))
-          (when open-parenthesis
-            (goto-char open-parenthesis)
-            (when (= (char-after) ?\{)
-              (setq return-code (+ return-code 2))
-              (setq test-point (point))))
-
-          (goto-char test-point)
-          ;; a possibility is that this may be a type
-          ;; declaration in a class inheritance list.
-          ;; it would only be a sole type then...
-           ; (message "  class definition from -%s-" (point))
-          (when (vala-syntax:preceeded-by-class-definition-p)
-            return-code)
-          )))))
+        (goto-char test-point)
+ ;;(message " class definition test-point2: -%s-" test-point)
+        (when (vala-syntax:preceeded-by-class-definition-p)
+          return-code)
+        )))))
 ; (vala-syntax:class-or-class-level-definition-p)indiscrete.revelation +a[
 
+(defun vala-syntax:class-or-class-level-definition-p-int ()
+  (interactive)
+  (message " is c-%s-" (vala-syntax:class-or-class-level-definition-p)))
 
 ;; used in indent
 ;TODO: This dhould allow line ends on spacing

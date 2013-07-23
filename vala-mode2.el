@@ -88,57 +88,58 @@ When started, runs `vala-mode2-hook'.
             'vala-syntax:propertize-extend-region)
 
   ;; Preset some EMACS general values
-  (setq vala-mode2:debug-messages       nil
+  (setq 
+   vala-mode2:debug-messages       nil
 
-        syntax-propertize-function      'vala-syntax:propertize
-        parse-sexp-lookup-properties    t
+   syntax-propertize-function      'vala-syntax:propertize
+   parse-sexp-lookup-properties    t
 
-        ;; TODO: font-lock
-        ;; (23.6.5 Levels of Font Lock)
-        font-lock-defaults              '(
-                (vala-font-lock:keywords-1 ;; mode-default fontification
-                )
+   ;; TODO: font-lock
+   ;; (23.6.5 Levels of Font Lock)
+   font-lock-defaults              '(
+                                     (vala-font-lock:keywords-1 ;; mode-default fontification
+                                      )
 
-                nil
-                ;; No other font-lock levels are currently set
-                 )
+                                     nil
+                                     ;; No other font-lock levels are currently set
+                                     )
 
-        ;; fontify comments and strings with the builtin syntactic
-        ;; function
-        font-lock-syntactic-face-function 'vala-font-lock:syntactic-face-function
+   ;; fontify comments and strings with the builtin syntactic
+   ;; function
+   font-lock-syntactic-face-function 'vala-font-lock:syntactic-face-function
 
-        ;; TODO: beginning-of-defun-function, end-of-defun-function
+   ;; TODO: beginning-of-defun-function, end-of-defun-function
 
-        ;; comments
-        paragraph-start                 vala-paragraph:paragraph-start-re
-        paragraph-separate              vala-paragraph:paragraph-separate-re
-        fill-paragraph-function         'vala-paragraph:fill-paragraph-function
-        adaptive-fill-function          'vala-paragraph:adaptive-fill-function
-        adaptive-fill-first-line-regexp vala-paragraph:fill-first-line-re
-        ;; but, what are these FOR?
-        comment-start                   "// "
-        comment-end                     ""
-        comment-start-skip              "\\(//+\\|/\\*+\\)[ \t]*"
-        comment-column                  0
-        comment-multi-line              t
+   ;; comments
+   paragraph-start                 vala-paragraph:paragraph-start-re
+   paragraph-separate              vala-paragraph:paragraph-separate-re
+   fill-paragraph-function         'vala-paragraph:fill-paragraph-function
+   adaptive-fill-function          'vala-paragraph:adaptive-fill-function
+   adaptive-fill-first-line-regexp vala-paragraph:fill-first-line-re
+   ;; but, what are these FOR?
+   comment-start                   "// "
+   comment-end                     ""
+   comment-start-skip              "\\(//+\\|/\\*+\\)[ \t]*"
+   comment-column                  0
+   comment-multi-line              t
 
-        ;;forward-sexp-function           'vala-mode2:forward-sexp-function
-        indent-line-function            'vala-indent:indent-line
-        ;;indent-tabs-mode                nil
-     ;;   indent-tabs-mode                t
-        ;; set this to the detection of space or tab
-        indent-tabs-mode                (progn
-                                          (let ((ident-type (vala-lib:buffer-has-tabs-p)))
-                                          (cond
-                                           ((= ident-type 0)
-                                            ;; undefined
-                                            (message "undefined indent style")
-                                            (default-value indent-tabs-mode)) 
-                                           ((= ident-type 1) nil) ; space
-                                           ((= ident-type 2) t) ; tabs
-                                           )))
-	;; tab-width
-        )
+   ;;forward-sexp-function           'vala-mode2:forward-sexp-function
+   indent-line-function            'vala-indent:indent-line
+   ;;indent-tabs-mode                nil
+   ;;   indent-tabs-mode                t
+   ;; set this to the detection of space or tab
+   indent-tabs-mode                (progn
+                                     (let ((ident-type (vala-lib:buffer-has-tabs-p)))
+                                       (cond
+                                        ((= ident-type 0)
+                                         ;; undefined
+                                         (message "undefined indent style")
+                                         (default-value indent-tabs-mode)) 
+                                        ((= ident-type 1) nil) ; space
+                                        ((= ident-type 2) t) ; tabs
+                                        )))
+
+   )
 ;;  (message "tabs -%s-" (vala-lib:buffer-has-tabs-p))
   ;; Put a message up
   (message "Indent style detected: -%s-"
@@ -147,13 +148,18 @@ When started, runs `vala-mode2-hook'.
   ;; TODO: need to change the tab internal style variables here, as the
   ;; variables were initialised long previously.
 
-;; (use-local-map vala-mode2-map)
-;;  (define-key c-mode-base-map "\C-c."     'c-set-style)
+;; Very temporary, profiler
+ (elp-instrument-package "vala")
+
+
+
+  ;; (use-local-map vala-mode2-map)
+  ;;  (define-key c-mode-base-map "\C-c."     'c-set-style)
   ;; add indent functionality to some characters
-;;  (vala-mode2-map:add-remove-indent-hook)
-;;  (vala-mode2-map:add-self-insert-hooks)
-;; 
-)
+  ;;  (vala-mode2-map:add-remove-indent-hook)
+  ;;  (vala-mode2-map:add-self-insert-hooks)
+  ;; 
+  )
 
 ;; Attach .vala files to the vala-mode2
 ;;;###autoload

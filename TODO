@@ -1,6 +1,7 @@
 == CHANGELOG
+Bug: Enums literals highlighting in green (class syntax detection fail)
 is-... functions renamed as ...-p finctions.
-Add compile info to README
+Add Makefile/compile info to README
 Bug: Tabs not indenting fully (use display, not buffer, posisiton)
 Tabs can be switched on fly
 Feature: source file tabbing detection
@@ -29,7 +30,7 @@ Tidy Regex - much deprecation
 Check regexps for consistency (define some as symbol?)
 
 
-Enum methods not highlighting
+Enum/struct methods not highlighting
 
 
 Some themes for > 8 bit terminals.
@@ -78,10 +79,10 @@ yes: paragraph
 
 
 == highlighting
-Stray highlighlighting- see bottom of .vapi test file
+Stray highlighlighting on keywords - see bottom of .vapi test file
 
 Three highlight modes:
-This now somewhat abandoned functionality could be interesting in this mode, not for peformance reasons, but for "levels of highlighting", e.g.
+This now somewhat abandoned functionality could be interesting in this mode, not for performance reasons, but for "levels of highlighting", e.g.
 3 full
 2 comments/keywords (maybe comments/OO definitions)
 1 comments only
