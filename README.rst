@@ -8,7 +8,7 @@
 
 Or, the weird one. This is not the comprehensive, standards-savvy, up-to-date mode which Vala, at this point, deserves.
 
-However, the author only uses EMACS in  a trivial way, to format and hunt down typographical errors, and has never coded in a LISP before. So he has little sadness, and no regrets.
+However, the author only uses EMACS in  a trivial way, to format and hunt down typographical errors, and has never coded in a LISP before. So he has little sadness (no regrets).
 
 Knowing very little about EMACs mode coding, and up against Vala's c-family syntax, the author made eccentric decisions. One of these, for example, was not to extend from CC mode (on which 'c-mode', 'java-mode' and several others are based). Without that code, the indentation is crude. But (the author shrugs his shoulders), some of this may turn out to be good for hunting down errors and formatting code. That's what matters.
 
@@ -68,14 +68,14 @@ Parsing of highlighting
 Operators are not highlighted
   This does not seem important in Vala. Operators are few in number, easy to spot, not a source of error. And, like most c-family languages, Vala ambiguously reuses operator characters for many purposes. Not highlighting operators helps.
 
-Variables are not highlighted
-  Like GNU c styles, variables in Vala are declared mostly at the top of methods. The author finds highlighting them confuses identification of parameters and the body of methods. Also, spotting them all is rather expensive (how do you tell a field from a method?).
+Variables are not highlighted, nor are the types in variable declarations
+  Like GNU c styles, variables in Vala are declared mostly at the top of methods. The author finds highlighting them confuses identification of parameters and the body of methods. Also, finding them is rather expensive (how do you tell a field from a method?). As for the c-family syntax round types, well...
 
 Most constants are not highlighted
   Does this really help? Though string and builtin literals are highlighted.
 
 No effort is made to break down strings
-  No detection of escape chars, etc. The author rarely finds them a source of error (then again, regex...).
+  No detection of escape chars, etc. The author rarely finds them a source of error (last words of author as he vanishes in smoke).
 
 A distinction is made between 'Object Orientated', and other, keywords
   OO modifying keywords, such as ``static`` and ``protected`` are highlighted using a different face.
@@ -87,7 +87,7 @@ Namespacing is highlighted
   Yes, it is. Try it.
 
 Types are highlighted inconsistently
-  Types are only highlighted when they create new types, or appear in method declarations.
+  Types are not highlighted in method bodies. Except when they create ``new`` types.
 
 Keywords are split into OO modifiers and minor
   To the author, there's a difference
@@ -122,23 +122,22 @@ Full detection of verbatim and literal strings, cross-line. Imbalanced brackets 
 
 Spaces vs. tabs
 ---------------
-On the argument of the ages, Vala is a generous language. Code parses, because whitespace is whitespace, and there are no guidelines, though source is tabbed.
+On the argument of the ages, Vala is a generous language. Whitespace is whitespace, code parses, and there are no guidelines, though source is tabbed.
 
 vala-mode2,
-- detects if a file has been written using tabs or spaces (it looks at the first likely line beginning).
-- can change to tabs or spaces on the fly (but seee below for how)
+- detects if a file has been written using tabs or spaces (it looks at the first likely line).
+- can change to tabs or spaces on the fly (but see below for how)
  
-vala-mode2 ought to work with either spaces or tabs. A first install of EMACS is likely using tabs. In general, to get spaces only (or reverse modifications) put,::
+A first install of EMACS is likely using tabs. In general, for spaces only, put,::
 
   ;; Use only spaces (no tabs at all).
   (setq-default indent-tabs-mode nil)
 
-in an emacs startup file. Or change using the interface, ::
-
+in an EMACS startup file. Or change using the interface, ::
 
   M-x customize-mode > vala > indent-tabs-mode
 
-But remember vala-mode2 will try to detect the tab mode of a file, so this default will only apply to new, or the occasionally undetectable, file.
+But remember, vala-mode2 will try to detect the tab mode of a file, so this default will only apply to new, or an occasionally undetectable, file.
 
 
 To change the tab mode immediately, use,
@@ -177,7 +176,7 @@ Still, it can do some sort of simulation of various styles. To see the current s
 
   C-h > v > vala-indentation-style <stylename>
 
-vala-mode2 can change styles on the fly (which is either fun or frustrating, depends if what you want is there). Change indentation style, ::
+vala-mode2 can change styles on the fly (which is either fun or frustrating, dependant on your expectations). Change indentation style, ::
 
   M-x customize-mode > vala
 
@@ -185,7 +184,7 @@ From there, a preset can be selected or, if 'custom' is selected, indents can be
  
   M-x vala-set-style <stylename>
 
-``stylename`` is a short descriptive string. To see valid entries for this function, and how they indent, use the customize interface or look in the file 'vala-style.el' for the function 'vala-style:presets'. The current list is,::
+``stylename`` is a short descriptive string. To see valid entries for this function, and how they indent, use the customize interface, or look in the file 'vala-style.el' for the function 'vala-style:presets'. The current list is,::
 
   gnu, 1tbs, k&r, allman, stroudstrup, whitesmith, linux, ais
 
@@ -202,7 +201,7 @@ Within block comments, the fill functions recognise some valadoc markup formatio
 
 List item markups which do not match within a comment paragraph will concatenate.
 
-Fill functions also work within simple and verbatim stings. In string fills markup is not recognised, and the fill works as a simple, no-prefix, fill against the left side.
+Fill functions also work within simple and verbatim stings. In string fills markup is not recognised, and the fill works as a simple, no-prefix fill against the left side.
 
 
 Whitespace cleanup
@@ -222,11 +221,14 @@ and, ::
 
 make clean
 
+On the author's computer, this cut a test computation from 6 secs to 4 secs.
 
 
 Notes for Emacs hackers and fans
 ================================
 This mode is low on syntax detection. It can be expensive on CPU time. If anyone wants it faster, likely it can be made faster.
+
+The disinterest in method bodies makes the highlighting look restrained on heavy code Vala files. On .vapi files, the highlighting looks like a seaside bucket.
 
 Somewhat unusually, the mode will (except in strings and block comments) stop highlighting whenever it fails to understand syntax. And, in general, it reacts to Just-In-Time re-highlighting. The mode should not often cause "EMACS went wrong".
 

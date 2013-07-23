@@ -1,4 +1,5 @@
 == CHANGELOG
+Bug: Some line start symbols being matched by modifier propetizing
 Bug: Enum elements highlighting (again. added defenses)
 Enum/struct methods should be highlighted
 Bug: Enums literals highlighting in green (class syntax detection fail)
@@ -27,11 +28,13 @@ Fill strings
 
 == TODO
 
-Tidy Regex - much deprecation
+Tidy Regex - much deprecation needed
 Check regexps for consistency (define some as symbol?)
 
 
+Some generics not highlighting in the test .vapi file
 
+are @ esapes really working?
 
 
 Some themes for > 8 bit terminals.
@@ -117,7 +120,6 @@ There is a manual note that there is no need to make variables for fontlocking. 
 There comes a point where it is not worth fighting with a system because the gains are too small. If some part of the information I hold grows in some more fertile way, than perhaps the mode will progress.
 
 ---------------------
-EMACS organises space/tabbing by taking requested indents, checking variables to see if it can use tabs, and if it can, using them. Differences are padded out using spaces. This works rather badly with our current, rigid, multiple-spacing, preset indentation styles.
 
 
 == MAYBEPATH
@@ -142,4 +144,4 @@ Code developed enough for the features unlikly to change.
 Debug code should be formalized.
 
 Release
-A Release Candidate tested enough, preferably externally, to suggest it will perform as the features and user can expect.
+A Release Candidate tested enough, preferably externally, to suggest it will perform with the stated features, and as the user can expect.

@@ -174,10 +174,13 @@ forward-slash (i.e. single line comments) and the symbols 'new',
 
 
 (defconst  vala-syntax:oo-modifier-keywords-opt-re
-  (regexp-opt vala-syntax:oo-modifier-keywords-raw 'words))
+  (regexp-opt vala-syntax:oo-modifier-keywords-raw)
+  "keywords for modifying OO structures/nodes.
+note: not 'symbols. Bounded elsewhere.")
 
-(defconst  vala-syntax:oo-modifier-keywords-seq-opt-re
-  (concat "\\(" vala-syntax:oo-modifier-keywords-opt-re "\\)+"))
+(defconst  vala-syntax:oo-modifier-keywords-seq-re
+  (concat "\\(?:" vala-syntax:oo-modifier-keywords-opt-re "[ ]+\\)+")
+  "Match a sequence of modifiers. Overruns following space, but ok.")
 
 
 ;; Keywords for OO access
@@ -201,11 +204,13 @@ forward-slash (i.e. single line comments) and the symbols 'new',
 ;; Param directions. They prefix params, modifiy behavior
 ;; TODO: rename to parameter modifiers.
 ;; May need others - weak, unowned?
-(defconst  vala-syntax:param-directive-raw
-  '("ref" "out"))
+(defconst  vala-syntax:param-directive-opt-re
+  (regexp-opt '("ref" "out")))
 
-(defconst  vala-syntax:param-directive-keywords-opt-re
-  (regexp-opt vala-syntax:param-directive-raw))
+;;TODO: keywords missing here?
+(defconst  vala-syntax:param-directive-keywords-seq-re
+  (concat "\\(?:" vala-syntax:param-directive-opt-re "[ ]+\\)+")
+  "Match a sequence of modifiers. Overruns following space, but ok.")
 
 
 
@@ -617,30 +622,6 @@ forward-slash (i.e. single line comments) and the symbols 'new',
           (set-match-data (list start-mark (match-end 0)))
           t )))))
 ;(vala-syntax:looking-at-code-attribute)[dio (dip = "diffy")]
-
-(defun vala-syntax:looking-at-oo-modifier ()
-  "Words named as modifiers.
-limit: limit length of work
-return: undefined"
-  (looking-at vala-syntax:oo-modifier-keywords-opt-re))
-
-(defun vala-syntax:looking-at-oo-modifiers ()
-  "Words named as modifiers.
-limit: limit length of work
-return: undefined"
-  (looking-at
-   (concat "\\(?:[ ]*" vala-syntax:oo-modifier-keywords-opt-re "\\>\\)+")))
-; (vala-syntax:looking-at-oo-modifiers)
-; static public abstractweak
-
-(defun vala-syntax:looking-at-parameter-modifiers ()
-  "Words named as parameter modifiers.
-limit: limit length of work
-return: undefined"
-  (looking-at
-   (concat "\\(?:[ ]*" vala-syntax:param-directive-keywords-opt-re "\\>\\)+")))
-; (vala-syntax:looking-at-parameter-modifiers)
-;ref 
 
 
 
@@ -1090,7 +1071,7 @@ likely to be a definition, as it will sucessfully detect anything that
 matches symbol, symbol, opening curved bracket.
 return: t if match, else nil"
   ;; easy start - any modifiers means it is
-  (if (vala-syntax:looking-at-oo-modifiers) t
+  (if (looking-at vala-syntax:oo-modifier-keywords-seq-re) t
   (save-excursion
     ;; look for type, symbol, open bracket 
     (when (vala-syntax:skip-syntax-forward-type)
@@ -1533,7 +1514,7 @@ return: undefined."
   (while (and
           (progn
             ;; test for and skip modifiers
-            (when (vala-syntax:looking-at-parameter-modifiers)
+            (when (looking-at vala-syntax:param-directive-keywords-seq-re)
               (put-text-property (match-beginning 0) (match-end 0)
                                  'font-lock-face
                                  'font-lock-minor-keywords-face)
@@ -1709,11 +1690,11 @@ body: if all keyword matching fails, code in this parameter is executed.
    (t
     ;;(message "left propertize %s" (point))
     ;; lock skip everything defined as OO keywords 
-    (when (vala-syntax:looking-at-oo-modifiers)
+    (when (looking-at vala-syntax:oo-modifier-keywords-seq-re)
       (put-text-property (match-beginning 0) (match-end 0)
                          'font-lock-face
                          'font-lock-keyword-face)
-      (goto-char (match-end 1)))
+      (goto-char (match-end 0)))
 
     ;; at this point we know little more than we have cleared modifiers
     (vala-syntax:skip-char-space)
