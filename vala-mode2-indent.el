@@ -70,22 +70,30 @@ from-line-indent: extra indent to use if text is found
 from-bracket-indent: indent to use if bracket only is found
 return: the calculated indent if bracket match found, else 0"
   (save-excursion
-    ;;(message "from bracket")
-    ;; find the open bracket
-    (let ((anchor 0) (open-b (nth 1 (syntax-ppss (point)))))
+    ;; Because Vala is fine with both spaces and brackets, we must be
+    ;; careful here. The buffer positions are not the display
+    ;; positions, for tabs, and (current-column) is needed for the
+    ;; display positions.
+
+    ;;  find the open bracket
+    (let* (
+           (anchor 0)
+           (open-b (nth 1 (syntax-ppss (point))))
+           )
       (if (null open-b)
-        0
+          0
         (goto-char open-b)
         ;; point to ob's line start
         (goto-char (line-beginning-position))
-        
- 
         (if (and (looking-at "[\t ]*") (< (match-end 0) open-b))
-            ;;the opening of the line is earlier than the bracket
-            (+ (- (match-end 0) (point))
-               (+ from-line-indent from-bracket-indent))
+            (progn
+              ;;the opening of the line is earlier than the bracket
+              (goto-char (match-end 0))
+              (+ (current-column)
+                 (+ from-line-indent from-bracket-indent)))
           ;;the line is the bracket only
-          (+ (- open-b (point)) from-bracket-indent)
+          (goto-char open-b)
+          (+ (current-column) from-bracket-indent)
           )))))
 ;  porridge((vala-indent:get-indent-from-container 3 2))
 
