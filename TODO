@@ -1,4 +1,6 @@
 == CHANGELOG
+Bug: Enum elements highlighting (again. added defenses)
+Enum/struct methods should be highlighted
 Bug: Enums literals highlighting in green (class syntax detection fail)
 is-... functions renamed as ...-p finctions.
 Add Makefile/compile info to README
@@ -25,12 +27,11 @@ Fill strings
 
 == TODO
 
-
 Tidy Regex - much deprecation
 Check regexps for consistency (define some as symbol?)
 
 
-Enum/struct methods not highlighting
+
 
 
 Some themes for > 8 bit terminals.
@@ -89,10 +90,12 @@ This now somewhat abandoned functionality could be interesting in this mode, not
 But I'm not going to read that page again, right now. Besides, due to the extensive use of syntax parsing calls, it involves tracking down the forntlock variables so the parsing can work from them (low priority). 
 
 
+
 == Profiling
 Class testing must be the slowest part of this. May be able to cache against brackets? Theres some code in vala-syntax: already for bracket caching.
 
 If bracket/class status is cached, may be more profitable to make newlines into punctuation syntax? 
+
 
 
 == The issue of custom variables

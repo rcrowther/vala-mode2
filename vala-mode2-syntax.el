@@ -149,8 +149,13 @@ forward-slash (i.e. single line comments) and the symbols 'new',
   '("class" "interface" "struct" "enum" "namespace"))
 
 (defconst vala-syntax:classlike-definition-keywords-opt-re
-   (regexp-opt vala-syntax:classlike-definition-keywords-raw 'words))
+   (regexp-opt vala-syntax:classlike-definition-keywords-raw 'symbols))
 
+(defconst vala-syntax:classlike-definition-keywords-and-bracketing-re
+  (concat "[{(/*]\\|\\(?:"
+          vala-syntax:classlike-definition-keywords-opt-re
+          "\\)"))
+;;(looking-at vala-syntax:classlike-definition-keywords-and-bracketing-re)
 
 ;; Modifiers used for class, method and field descriptions.
 ; What is partial/params?
@@ -911,15 +916,36 @@ return: t if a type was matched, else nil"
 ;; functions can not usually return definitive results from any point
 ;; in a buffer. They should be used in likely areas, to select between
 ;; alternatives.
-;;
+
+(defconst vala-syntax:type-guess-re
+  (concat
+   ;; classpath, generic, or constructor, yes  
+   "[.<[(]\\|" 
+   ;; space then alphanumeric, yes
+   "\\(?:\\s +[A-Za-z@]\\)" ;
+   ))
+
+(defun vala-syntax:type-or-constructor-rough-p ()
+  "Test an item is like a type or constructor.
+
+The function searches for a few characters giving positive id
+\\(.<(). If that fails, it looks for space than the start of
+a (so a type/symbol pair).
+
+This function only works in generally likely regions."
+  (save-excursion
+    (when  (> (skip-syntax-forward "w_'" (line-end-position)) 0)
+      (looking-at vala-syntax:type-guess-re))))
+
+;; Used in indent
 (defun vala-syntax:class-definition-p ()
   "Check an item is part of a list opened with the word 'class'.
 Fails on empty lines, semi-colon, and beginning of buffer.
 Point is unmoved.
 param: a regex
 return: t if matched, else nil"
-  (vala-syntax:look-backward-p "class")
-  )
+  (vala-syntax:look-backward-p 
+   vala-syntax:classlike-definition-keywords-opt-re))
 
 ;; Much used,
 ;; profiling suggests about 1/8 of total scantime.
@@ -943,15 +969,23 @@ return: t if matched, else nil"
                      (bobp)
                      ;; fail on curly/round brackets too. Must have sexped
                      ;; over a code block.
-                     (looking-at "(\\|{\\|class"))))
-        )
-      (looking-at "class"))))
+   ;;                  (looking-at "(\\|\\|{\\|class")
+                     (looking-at 
+                      vala-syntax:classlike-definition-keywords-and-bracketing-re)
+                      ))))
+;;  (message " classwords found at -%s-" (point))
+      (looking-at vala-syntax:classlike-definition-keywords-opt-re)
+     ;; (looking-at "class")
+      )))
 ; protect class boop.frog<> : 
 ;dark
 ;(progn (forward-line -2)
 ; (vala-syntax:preceeded-by-class-definition-p))
+;;  (message "-%s-" (vala-syntax:preceeded-by-class-definition-p)))
 
-
+ (defun vala-syntax:preceeded-by-class-definition-p-int ()
+   (interactive)
+   (message "-%s-" (vala-syntax:preceeded-by-class-definition-p)))
 
 ;; used by indent
 (defun vala-syntax:syntax-class-inheritance-item-p ()
@@ -962,17 +996,17 @@ This function uses syntax to skip. It relies on generic bracketing
 having bracketing syntax.
 return: t if matched, else nil"
   (save-excursion
-  (while (and
-          (progn (skip-syntax-backward " ") (= (char-before) ?\,))
-          (progn (backward-char) (vala-syntax:skip-syntax-backward-type)))
-    (backward-char))
-  (when (and (= (char-before) ?\:)
-             ;; not enough, there's an ambiguity with named parameters
-             (progn (backward-char)
-                    (skip-syntax-backward " ")
-                    (vala-syntax:skip-syntax-backward-type))
-             (progn (backward-sexp)
-                    (looking-at "class"))) t )))
+    (while (and
+            (progn (skip-syntax-backward " ") (= (char-before) ?\,))
+            (progn (backward-char) (vala-syntax:skip-syntax-backward-type)))
+      (backward-char))
+    (when (and (= (char-before) ?\:)
+               ;; not enough, there's an ambiguity with named parameters
+               (progn (backward-char)
+                      (skip-syntax-backward " ")
+                      (vala-syntax:skip-syntax-backward-type))
+               (progn (backward-sexp)
+                      (looking-at "class"))) t )))
 ;protected class oko.Entry : gtk, conconation.crum,   io[],
 ;(progn (forward-line -2) (goto-char (line-end-position))
 ;(vala-syntax:syntax-class-inheritance-item-p))
@@ -1039,7 +1073,7 @@ else nil"
         )))))
 ; (vala-syntax:class-or-class-level-definition-p)indiscrete.revelation +a[
 
-(defun vala-syntax:class-or-class-level-definition-p-int ()
+(defun vala-syntax:class-or-class-level-definition-p-interactive ()
   (interactive)
   (message " is c-%s-" (vala-syntax:class-or-class-level-definition-p)))
 
@@ -1069,6 +1103,7 @@ return: t if match, else nil"
 ;doing<freeb<heck>> pally
 
 
+;; used in indent?
 (defun vala-syntax:path-symbol-with-following-bracket-p ()
   ""
   (save-excursion
@@ -1447,7 +1482,7 @@ limit:limit length of work
 return: nothing interesting"
 ;; This will accept array types,
 ;; which is not valid Vala syntax, but syntactically consistent,
-;; and, for now, the anytype funtion is reused. Until soomeone complains)
+;; and, for now, the anytype function is reused. Until someone complains)
   (while 
       (and 
        (vala-syntax:pskip-partial-anytype)
@@ -1704,11 +1739,14 @@ body: if all keyword matching fails, code in this parameter is executed.
            )
           ((= type-class 2)
            ;; moved out of curly brackets
-           ;; must be method or field item
-           (vala-syntax:pskip-partial-anytype)
-         ;;(message "  try pskipping method or field -%s-" (point))
-           (vala-syntax:pskip-method-or-field-definition)
-           )
+           ;; could be a method, field item, constructor symbol, enum
+           ;; element. Most of these will be highlighted as type, but
+           ;; not enum elements.
+           (when (vala-syntax:type-or-constructor-rough-p)
+            (vala-syntax:pskip-partial-anytype)
+            ;;(message "  try pskipping method or field -%s-" (point))
+            (vala-syntax:pskip-method-or-field-definition))
+          )
           ((= type-class 3)
            ;; moved out of curved and curly brackets.
            ;; must be method definition parameters.
