@@ -326,104 +326,9 @@ forward-slash (i.e. single line comments) and the symbols 'new',
 
 ;;vala-syntax:non-propertized-keywords-opt-re
 
-;; (defconst vala-syntax:all-keywords-raw
-;; ; Const expanding is not valid in regex opts, it seems.
-;; ; So this is hand-written, and will need updating if
-;; ; the base regexps are altered.
-;;   (append
-;;    ; deleegate, class ...
-;;    vala-syntax:classlike-definition-keywords-raw
-;;    ; protected, abstract, const, weak...
-;;    vala-syntax:oo-modifier-keywords-raw
-;;    ; case, default
-;;    vala-syntax:colon-finish-keywords-raw
-;;    ; switch, lock
-;;    vala-syntax:parameter-brace-keywords-raw
-;;                                         ; if, foreach, do... try!
-;;    vala-syntax:maybe-brace-keywords-raw
-;;                                         ; break, continue, return, yield
-;;    vala-syntax:parameter-brace-keywords-raw
-;;                                         ; yield break return
-;;    vala-syntax:no-brace-keywords-raw
-;;                                         ;  signal class TODO: delegate!
-;;    ))
-
-(defconst vala-syntax:all-keywords-raw-bck
-'(
-                "switch" "case" "default" "if" "else" "do" "while" "for" "foreach"
-                "throw" "throws" "try" "catch" "finally"
-                "break" "continue"
-                "lock"
-                "var" "new" "return"
-                ; Class refs
-                ; "this" "base"
-                ; Gee?
-                "forAll"
-                ; Namespacing
-                "namespace" "using"
-                                        ;class-or-object-re
-                "class" "interface" "struct" "enum" "signal"
-                                        ;node-modifier-kwrds
-                "internal" "private" "protected" "public" "partial"
-                "const" "static" "async" "yield"
-                "abstract" "virtual" "override"
-                "params" 
-                "weak" "owned" "unowned"
-                ))
-
-
-;;(defconst vala-syntax:all-keywords-opt-re
-;; (regexp-opt vala-syntax:all-keywords-raw) 'words)
-
-
-
 
 ;; Several of these are defined here but unused in this file.
 ;; See vala-mode2-fontlock.
-;;(defconst vala-syntax:all-keywords-re
-;;  (concat "\\(^\\|[^@]\\)" vala-syntax:all-keywords-opt-re))
-
-
-;; Non-declarative keywords are those that would not prefix types.
-;;
-;; (defconst vala-syntax:non-declarative-keywords-raw
-;; ; Const expanding is not valid in regex opts, it seems.
-;; ; So this is hand-written, and will need updating if
-;; ; the base regexps are altered.
-;;   (append
-;;    ;; for forach sizeof typeof
-;;    vala-syntax:parameterised-raw
-;;    ;; case, default
-;;    vala-syntax:colon-finish-keywords-raw
-;;    ;; switch, lock
-;;    vala-syntax:parameter-brace-keywords-raw
-;;    ;; set/get if then else while do try catch finally ... foreach?!
-;;    vala-syntax:maybe-brace-keywords-raw
-;;    ;; switch lock
-;;    vala-syntax:parameter-brace-keywords-raw
-;;    ;; return continue break yield
-;;    vala-syntax:no-brace-keywords-raw
-;;    (list "var" "throw")
-;;    ))
-
-
-;;(defconst vala-syntax:non-declarative-keywords-opt-re
-;; (regexp-opt vala-syntax:non-declarative-keywords-raw) 'words)
-
-;;(defconst vala-syntax:non-declarative-keywords-grouped-re
- ;; (concat "\\(" vala-syntax:non-declarative-keywords-opt-re "\\>\\)"))
-;(looking-at vala-syntax:non-declarative-keywords-re)
-;break
-
-;;(defconst vala-syntax:after-reserved-symbol-re
-;  (concat "\\($\\|" vala-syntax:line-comment-start-re
-;          "\\|[^" vala-syntax:opchar-group "]\\)"))
-
-; (defconst vala-syntax:reserved-symbols-re
-  ;; reserved symbols and XML starts ('<!' and '<?')
-;  (concat "\\(^\\|[^" vala-syntax:opchar-group "]\\)"
-;          vala-syntax:reserved-symbols-raw-re
-;          "\\(" vala-syntax:after-reserved-symbol-re "\\)"))
 
 
 (defun vala-syntax:backward-sexp ()
@@ -765,7 +670,7 @@ Point should be positioned before a baracket.
 "
   (if (> depth vala-syntax:bracket-depth-cache-depth)
       (progn ;; brackets nesting, check if is class
-        ;;(is-class-or-class-level-definition)
+        ;;(class-or-class-level-definition-p)
         (vala-syntax:set-bracket-depth-cache fun-p depth))
     ;; brackets denesting or similar, return value from cache
     (aref vala-syntax:bracket-depth-cache depth)))
@@ -961,84 +866,12 @@ return: t if a type was matched, else nil"
             ;; there's one last possibility that this may be a type
             ;; declaration, if it is part of a class inheritance list.
             ;; it would only be a sole type, with a following comma...
-            ((vala-syntax:is-class-definition) t)
+            ((vala-syntax:class-definition-p) t)
             (t nil) 
             ))
       ))
 ;(vala-syntax:skip-syntax-forward-type)
 ;indiscrete.monochrome[] dim
-
-; deprecated
-;; (defun vala-syntax:skip-backward-symbol-path ()
-;;   "skip a symbol path backwards.
-;; This function uses syntax as defined in the table, so is safe on
-;; an initial parse.
-;; return: t if anything matched, else nil"
-;;   ;; can match with an initial period, but do we care? 
-;;   (let ((anchor (point)))
-;;     (while (and (< (skip-syntax-backward "w_'" (line-beginning-position)) 0)
-;;                 (= (char-before) ?\.))
-;;       (backward-char)
-;;       )
-;;     (< (point) anchor)))
-;class .indiscrete.monochrome<
-;(progn (forward-line -2) (goto-char (line-end-position))
-;(vala-syntax:skip-backward-symbol-path))
-
-
-
-;; (defun vala-syntax:skip-backward-generic ()
-;;   "Skip backwards over generic definitions.
-;; This function uses syntax as defined in the table, so is safe on
-;; an initial parse.
-;; return: t if nothing matched or balanced, else nil"
-;;   (let ((depth 0) (start (point)))
-;;     (while 
-;;         ;; three ways of continuing, comma, close angle brace,
-;;         ;; or unrecognised parse
-;;         (cond
-;;          ((= (char-before) ?\>)
-;;           (setq depth (+ depth 1))
-;;           (backward-char)
-;;           t)
-;;          ;; must test depth or will skip preceeding symbol paths
-;;          ((and (> depth 0) (vala-syntax:skip-backward-symbol-path))
-;;           (skip-syntax-backward " " (line-beginning-position))
-;;           (cond
-;;            ((= (char-before) ?\,)
-;;             (backward-char)
-;;             t
-;;             )
-;;            ((= (char-before) ?\<)
-;;             (setq depth (- depth 1))
-;;             ;;(message " prop2 -%s--%s-" (char-before) (char-after))
-;;             (backward-char)
-;;             (> depth 0)
-;;             )
-;;            (t nil)))
-;;           (t nil))
-;;       (skip-syntax-backward " " (line-beginning-position)))
-;;     (= depth 0)))
-;; ;class indiscrete.monochrome[gop.gig[fig]]
-;; ;(progn (forward-line -2) (goto-char (line-end-position))
-;; ;(vala-syntax:skip-backward-generic))
-
-; deprecated?
-;; (defun vala-syntax:skip-backward-type ()
-;;   "Skip a type declaration backwards.
-;; This function uses syntax to skip. It relies on generic baracketing
-;; having bracketing syntax.
-;; It ignores (char-based) line ends in it's searching to test for a type
-;; declaration.
-;; For detection after propertizing.
-;; return: t if a type was matched, else nil"
-;;   (when (vala-syntax:skip-backward-generic)
-;;     (backward-char)
-;;     (vala-syntax:skip-backward-symbol-path)
-;;     ))
-;class indiscrete.monochrome
-;(progn (forward-line -2) (goto-char (line-end-position))
-;(vala-syntax:skip-backward-type))
 
 ;; used by indent?
 (defun vala-syntax:skip-syntax-backward-type ()
@@ -1063,53 +896,20 @@ return: t if a type was matched, else nil"
 ;(vala-syntax:skip-syntax-backward-type))
 
 
-;; (defun vala-syntax:goto-open-bracket ()
-;;   "Check an item is part of a list opened with '('.
-;; return: t if matched, else nil"
-;;   ;; It works by skipping back to the parsers idea of an opening,
-;;   ;; then testing not inside comment, and no funny semi-colons in the
-;;   ;; region. There are other solutions, like backwards regexing...
-;;   ;; save the spot and the parsed start
-;;   (let (
-;;         (end (point)) 
-;;         (start (nth 1 (syntax-ppss (point))))
-;;         )
-
-;;     ;; 1 opening bracket, 4 inside comment
-;;   ;  (message " is brckt? -%s--%s-"
-;;    ;          (nth 1 start) (not (nth 4 start-syntax)))
-;;     (when (and start
-;;                (progn 
-;;                  (goto-char start)
-;;                  ;; EMACS gear matches brackets in comments.
-;;                  ;; This I suppose, is handy for other languages
-;;                  ;; ...humm.
-;;                  (not (nth 4 (syntax-ppss (point)))))
-;;                (= (char-after) ?\()
-;;                )
-;;       ;; test there are no semi-colons in this bracket range
-;;       (while (and (<= (point) end)
-;;                   (progn
-;;                     (forward-comment (buffer-size))
-;;                     (forward-sexp)
-;;                     (not (looking-at ";"))
-;;                     )
-;;                   ))
-;;       (when  (>= (point) end) (goto-char start) t))
-;;       ))
-
 
 ;;
-;; Is functions
+;; Predicate functions
 ;;
-;; is- functions test if something is something else. They return no match,
-;; so are not looking-at functions.
+;; xxx-p functions test if something is something else. They usually
+;; return boolean, though some here return state (maybe not
+;; predicates, but this is LISP being hoity-toity).
 ;;
-;; Due to the many ambiguities in c-family syntax, is- funtions can not
-;; usually return definative results from any subrange of syntax. They
-;; can only be used in likly areas, to select between alternatives.
+;; Due to the many ambiguities in c-family syntax, the predicate
+;; functions can not usually return definitive results from any point
+;; in a buffer. They should be used in likely areas, to select between
+;; alternatives.
 ;;
-(defun vala-syntax:is-class-definition ()
+(defun vala-syntax:class-definition-p ()
   "Check an item is part of a list opened with the word 'class'.
 Fails on empty lines, semi-colon, and beginning of buffer.
 Point is unmoved.
@@ -1119,7 +919,7 @@ return: t if matched, else nil"
   )
 
 
-(defun vala-syntax:is-preceeded-by-class-definition ()
+(defun vala-syntax:preceeded-by-class-definition-p ()
   "Check point is somewhere within a class definition.
 The algorithm is to sexp back, looking for the word 'class'.
 The function fails if the bracketting level changes, or bobp appears.
@@ -1147,35 +947,11 @@ return: t if matched, else nil"
 ; protect class boop.frog<> : 
 ;dark
 ;(progn (forward-line -2)
-; (vala-syntax:is-preceeded-by-class-definition))
+; (vala-syntax:preceeded-by-class-definition-p))
 
-;; (defun vala-syntax:is-class-inheritance-item ()
-;;   "Check an item is part of a list of inheritance items.
-;; The algorithm is to walk back, looking for commas, the colon, 
-;; the symbol then the word 'class'.
-;; return: t if matched, else nil"
-;;   (save-excursion
-;;     (message " inheritance test at -%s-" (point))
-;;     (while (and
-;;             (progn (skip-syntax-backward " ") (= (char-before) ?\,))
-;;             (progn (backward-char) (vala-syntax:skip-backward-type)))
-;;       (backward-char))
-
-;;     (and (= (char-before) ?\:)
-;;          ;; not enough, there's an ambiguity with named parameters
-;;          (progn (backward-char)
-;;                 (skip-syntax-backward " ")
-;;                 (vala-syntax:skip-backward-type))
-;;          (progn (backward-sexp)
-;;   (message " is class inheritance -%s-" (looking-at "class"))
-;;                 (looking-at "class")))))
-;; ; protect class boop.frog<> : 
-;; ;dark
-;; ;(progn (forward-line -2)
-;; ; (vala-syntax:is-class-inheritance-item))
 
 ;; used by indent
-(defun vala-syntax:is-syntax-class-inheritance-item ()
+(defun vala-syntax:syntax-class-inheritance-item-p ()
   "Check an item is part of a list of inheritance items.
 The algorithm is to walk back, looking for commas, the colon, 
 the symbol then the word 'class'.
@@ -1196,43 +972,10 @@ return: t if matched, else nil"
                     (looking-at "class"))) t )))
 ;protected class oko.Entry : gtk, conconation.crum,   io[],
 ;(progn (forward-line -2) (goto-char (line-end-position))
-;(vala-syntax:is-syntax-class-inheritance-item))
+;(vala-syntax:syntax-class-inheritance-item-p))
 
-;; (defun vala-syntax:is-generic-array-or-paired-type ()
-;;   (save-excursion
-;;     ;; Inital parse values can be used for symbol skipping, they
-;;     ;; are a positive assertion of chars.
-;;     ;; if followed by a period, this text must be a namespaced chain.
-;;     ;; An OO chain could be any OO declaration, class type, field or
-;;     ;; method, so its presence is not at all conclusive.
-;;     ;; TODO: This code currently allows a trailing dot
-;;     (when (vala-syntax:skip-syntax-symbol-path)
-;;       ;; skip any space. Note the function can skip over line ends
-;;       (vala-syntax:skip-char-tab-space-and-line-ends)
-;;       ;; if followed by open angle or open block brackets,
-;;       ;; must be a type.
-;;       ;; if followed by a symbol char then likely the code is the type
-;;       ;; declaration of a type symbol pair (this algorithm may fail for a
-;;       ;; number followed by <, say (a number being a valid symbol in the
-;;       ;; simplictic parsing here). We'll see? 
-;;       (looking-at "[<[]\\|\\(?:[a-zA-Z]\\)"))))
 
-;; (defun vala-syntax:is-type2 ()
-;;   "look forward for a type declaration.
-;; This function is not a looking-at, as it returns no match.
-;; It ignores (char-based) line ends in it's searching to test for a type
-;; declaration.
-;; For use in a propertize function"
-;;   (or
-;;    (vala-syntax:is-generic-array-or-paired-type)
-;;     ;; a possibility is that this may be a type
-;;     ;; declaration in a class inheritance list.
-;;     ;; it would only be a sole type then...
-;;     (vala-syntax:is-class-inheritance-item)
-;;     ))
-;; ; (vala-syntax:is-type)indiscrete.revelation +a[
-
-(defun vala-syntax:is-class-or-class-level-definition ()
+(defun vala-syntax:class-or-class-level-definition-p ()
   "test if in a class definition, or a definition within a class code block.
 It ignores (char-based) line ends in a search to test for a class
 declaration.
@@ -1289,10 +1032,10 @@ else nil"
           ;; declaration in a class inheritance list.
           ;; it would only be a sole type then...
            ; (message "  class definition from -%s-" (point))
-          (when (vala-syntax:is-preceeded-by-class-definition)
+          (when (vala-syntax:preceeded-by-class-definition-p)
             return-code)
           )))))
-; (vala-syntax:is-class-or-class-level-definition)indiscrete.revelation +a[
+; (vala-syntax:class-or-class-level-definition-p)indiscrete.revelation +a[
 
 
 ;; used in indent
@@ -1300,7 +1043,7 @@ else nil"
 ; and make positive detection of all parts
 ; should also include a modifier check
 ; and also following brackets to confirm
-(defun vala-syntax:is-syntax-function-or-class-declaration ()
+(defun vala-syntax:syntax-function-or-class-declaration-p ()
   "Test for a fuction or class definition.
 Includes simple, array and class types. This
 function is reasonably defended, but should be used in areas which are
@@ -1314,81 +1057,21 @@ return: t if match, else nil"
     (when (vala-syntax:skip-syntax-forward-type)
       ;; skip any space. Note the function can skip over line ends
       (vala-syntax:skip-char-tab-space-and-line-ends)
-      (vala-syntax:is-path-symbol-with-following-bracket)
+      (vala-syntax:path-symbol-with-following-bracket-p)
       ))))
-;(vala-syntax:is-syntax-function-or-class-declaration)
+;(vala-syntax:syntax-function-or-class-declaration-p)
 ; doing[] pounding.head(
 ;doing<freeb<heck>> pally
 
 
-(defun vala-syntax:is-path-symbol-with-following-bracket ()
+(defun vala-syntax:path-symbol-with-following-bracket-p ()
   ""
   (save-excursion
     (vala-syntax:skip-syntax-symbol-path)
     (vala-syntax:skip-char-tab-space-and-line-ends)
     (=(char-after) ?\()))
-;(vala-syntax:is-path-symbol-with-following-bracket)
+;(vala-syntax:path-symbol-with-following-bracket-p)
 ;gh (
-
-;; deprecated?
-;;TODO: Should ignore line-ends
-;; (defun vala-syntax:is-preceeded-by-access-modifier ()
-;;   "test if an access modifier preceeds point.
-;; Skips whitespace (backwards)
-;; return:t if preceeded by a modifier, else nil"
-;;   (save-excursion
-;;     (skip-syntax-backward " " (line-beginning-position))
-;;     (when (and (< (skip-syntax-backward "w_'" (line-beginning-position)) 0)
-;;                (looking-at vala-syntax:access-modifier-keywords-opt-re))
-;;       t)))
-;(progn (goto-char (line-end-position))
-;(vala-syntax:is-preceeded-by-access-modifier))
-;public
-
-;; deprecated?
-;TODO: This dhould allow line ends on spacing
-; and make positive detection of all parts
-; should also include a modifier check
-; and also following brackets to confirm
-;; (defun vala-syntax:is-type-symbol-pair-backwards ()
-;;   "Test for a type symbol pair, working backwards.
-;; Includes simple, array and class types. This
-;; function should be used in areas which are likely to be a type, as it will
-;; sucessfully match any valid Vala symbbol, including method names and numeric values.
-;; It would also match -greater than- in ambiguity with -generic close-.
-;; e.g. Could test for a function or class definition.
-;; return: t if match, else nil"
-;;   (save-excursion
-;;     (skip-syntax-backward " ")
-;;     ;; find a symbol
-;;     (while (and 
-;;             (< (skip-syntax-backward "w_'" (line-beginning-position)) 0)
-;;             (when (= (char-before) ?\.)
-;;               (backward-char) t)))
-
-;;     (skip-syntax-backward " ")
-;;     (backward-char)
-;;     ;; find a second symbol, or closing angle or square bracket
-;;     ;; (so likely a type definition) 
-;;     (looking-at "[>a-zA-Z1-9]\\|]")
-;;     ))
-;(progn
-; (forward-line 2)
-;(vala-syntax:is-type-symbol-pair-backwards))
-;do it
-
-;; deprecated?
-;; (defun vala-syntax:is-method-definiton-brackets ()
-;;   "Check an item is part of a list opened with '('.
-;; Fails on empty lines, semi-colon, and beginning of buffer.
-;; return: t if matched, else nil"
-;;   (save-excursion
-;;    ;; (vala-syntax:goto-backward-char "(")
-;;     (when (vala-syntax:goto-open-bracket)
-;;       (message "md found brkt -%s-" (point))
-;;       (vala-syntax:is-type-symbol-pair-backwards)
-;;       )))
-
 
 
 
@@ -1471,7 +1154,7 @@ match-group 'match-group'"
 
 ;; TOCONSIDER: seems messy for what it does?
 ;; TODO: This seems to escape '\""'?
-(defun vala-syntax:is-escaped-char (&optional pos)
+(defun vala-syntax:escaped-char-p (&optional pos)
   "check if a string is an escaped character.
 checks if the previous character is a backslash escape, which is not itself backslashed."
   (save-excursion
@@ -1487,7 +1170,7 @@ checks if the previous character is a backslash escape, which is not itself back
            (not (= back-char-2 ?\\)))
       ))))
 ;\\c
-;(vala-syntax:is-escaped-char 48931)
+;(vala-syntax:escaped-char-p 48931)
 
 
 (defun vala-syntax:propertize-strings (start end)
@@ -1502,7 +1185,7 @@ Ignores text inside comments."
     (setq syntax-parse (syntax-ppss found-start))
     (if (or
          ;; if escaped, ignore and move on.
-         (vala-syntax:is-escaped-char found-start)
+         (vala-syntax:escaped-char-p found-start)
          ;; 4 = inside comment, ignore and move on.
          (nth 4 syntax-parse))
         (goto-char (+ found-end 1))
@@ -1864,25 +1547,6 @@ return: nothing interesting"
 ;; propertize - other
 ;;
 
-;; (defun vala-syntax:goto-syntax-re (re limit)
-;;   "goto the next occurence of re"
-;;   ;; for implementation comments, see vala-syntax:forward-sexp
-;;   (forward-comment limit)
-;;   (while (progn
-;;            (skip-syntax-forward " " limit)
-;;            (when (not (looking-at re)) 
-;;              (forward-sexp)
-;;              (< (point) limit)
-;;              )))
-;;   (looking-at re)
-;;   )
-;; ;(vala-syntax:goto-syntax-re ":" (line-end-position)) 1:
-
-;; (defconst vala-syntax:irregular-conditional-delimit-re
-;;   (concat vala-syntax:irregular-conditional-keywords-opt-re "\\|}"))
-;; ;(looking-at vala-syntax:irregular-conditional-delimit-re) case
-
-
 (defmacro vala-syntax:propertize-line-beginning-keywords (body)
   "Add properties to keywords which start lines.
 For keywords which start lines and need more than a simple lock.
@@ -1961,9 +1625,7 @@ body: if all keyword matching fails, code in this parameter is executed.
      (vala-syntax:pskip-namespace-list))
 
     ;;TODO: whats the @ for?
-    (t 
-    ;(message " class definition pretest -%s-" (vala-syntax:is-type))
-     ,body)
+    (t ,body)
     ))
 ;(macroexpand '(vala-syntax:propertize-line-beginning-keywords (message "failed!")))
 ;(vala-syntax:propertize-line-beginning-keywords
@@ -2020,7 +1682,7 @@ body: if all keyword matching fails, code in this parameter is executed.
        ;; If no opening keywords, into the realms of substituting
        ;; detection heuristics for c-family long multiple-state
        ;; parsing.
-       (let ((type-class (vala-syntax:is-class-or-class-level-definition)))
+       (let ((type-class (vala-syntax:class-or-class-level-definition-p)))
          ;;(message " type return %s" type-class)
          (cond
           ;;failed. bail.

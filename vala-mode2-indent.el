@@ -196,14 +196,14 @@ cannot be determined."
          (vala-indent:get-indent 'vala-indent:definition-to-brackets)))
 
      ;;not in comments or brackets
-     ((vala-syntax:is-syntax-class-inheritance-item)
+     ((vala-syntax:syntax-class-inheritance-item-p)
       ;;(goto-char (line-beginning-position))
       (+ (vala-indent:get-indent-from-container
           (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)
           (vala-indent:get-indent 'vala-indent:nesting-brackets-to-body))
          (vala-indent:get-indent 'vala-indent:definition-to-brackets)))
 
-     ((vala-syntax:is-syntax-function-or-class-declaration)
+     ((vala-syntax:syntax-function-or-class-declaration-p)
       ;; declarations
       (vala-indent:get-indent-from-container
        (vala-indent:get-indent 'vala-indent:nesting-definition-to-brackets)

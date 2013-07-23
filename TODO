@@ -1,4 +1,5 @@
 == CHANGELOG
+is-... functions renamed as ...-p finctions.
 Add compile info to README
 Bug: Tabs not indenting fully (use display, not buffer, posisiton)
 Tabs can be switched on fly
@@ -43,7 +44,7 @@ Maybe some would like a choice about using the semantic face function (especiall
 
 Some of the new font faces could/should inherit, but I never figured out how to do that *and* alter them.
 
-The is-... functions should probably be renamed as ...-p finctions.
+
 
 
 
