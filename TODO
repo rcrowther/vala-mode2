@@ -63,7 +63,7 @@ More sophisticated indenting.
 
 
 == Tabs
-For new files, Indent should default to indent-tabs-mode
+For new files, indent should default to indent-tabs-mode
 
 Test permanent saves of indent style customization.
  

@@ -641,32 +641,60 @@ note: not 'symbols. Bounded elsewhere.")
 ;; Bracket depth cache
 ;;
 
+(defvar vala-syntax:bracket-depth-cache-region-end-anchor 0)
+
 ;; arbitary length to start
 (defvar vala-syntax:bracket-depth-cache
   (make-vector 32 nil))
 
-(defvar vala-syntax:bracket-depth-cache-depth 0)
+
+(defvar vala-syntax:bracket-depth-cache-depth 0
+  "dpeth is the deepest valid value")
 
 ;; be quiet, compiler!
 (declare-function fun-p "vala-mode2-syntax.el" nil)
 
-(defun vala-syntax:set-bracket-depth-cache (fun-p depth)
-  (aset vala-syntax:bracket-depth-cache depth (fun-p))
-  (setq vala-syntax:bracket-depth-cache-depth depth))
 
 (defun vala-syntax:get-bracket-depth-cache (fun-p depth)
-  "Ask if this is a set of parameters satisfies the supplied requirements,
-Point should be positioned before a baracket.
+  "Get a cached value,
+
+This function returns cached values if DEPTH is below previous
+requested depths. Otherwise it calculates, and caches, a new
+value from FUN-P. The cache is intended for bracketed, nested,
+data.
+
+return: the value from a FUN-P, either cached or newly
+calculated.
 "
+  ;; simple heuristic - the value will be recalculated if above the
+  ;; previous request.
   (if (> depth vala-syntax:bracket-depth-cache-depth)
-      (progn ;; brackets nesting, check if is class
-        ;;(class-or-class-level-definition-p)
-        (vala-syntax:set-bracket-depth-cache fun-p depth))
-    ;; brackets denesting or similar, return value from cache
-    (aref vala-syntax:bracket-depth-cache depth)))
+      ;; depth not in valid region. Use function to calculate.
+      (progn
+        ;; only increase the depth if it is directly above the current
+        ;; valid depth (or old and invalid nested values may be
+        ;; revalidated)
+        (when (= depth (+ vala-syntax:bracket-depth-cache-depth 1))
+          (setq vala-syntax:bracket-depth-cache-depth depth))
+        (aset vala-syntax:bracket-depth-cache depth (funcall fun-p)))
+    ;; depth is in the valid region, if working sequentially, bracket
+    ;; results will not have changed, return the cached value.
+    (progn 
+      ;; clamp the depth. anything above this is now suspicious
+      (setq vala-syntax:bracket-depth-cache-depth depth)
+      (aref vala-syntax:bracket-depth-cache depth)
+      )))
+;; (class-or-class-level-definition-p) 
+;; (defun t-p () t)
+;; (progn (setq vala-syntax:bracket-depth-cache  (make-vector 32 nil))
+;; (setq vala-syntax:bracket-depth-cache-depth 0))
+;; (progn (vala-syntax:get-bracket-depth-cache 't-p 0)
+;; (message "-%s--%s-" vala-syntax:bracket-depth-cache-depth 
+;; vala-syntax:bracket-depth-cache))
+
 
 (defun vala-syntax:reset-bracket-depth-cache ()
-  (setq vala-syntax:bracket-depth-cache nil))
+  (setq vala-syntax:bracket-depth-cache-depth 0))
 
 
 ;;
@@ -922,7 +950,6 @@ This function only works in generally likely regions."
 (defun vala-syntax:class-definition-p ()
   "Check an item is part of a list opened with the word 'class'.
 Fails on empty lines, semi-colon, and beginning of buffer.
-Point is unmoved.
 param: a regex
 return: t if matched, else nil"
   (vala-syntax:look-backward-p 
@@ -940,7 +967,7 @@ return: t if matched, else nil"
   (save-excursion
     ;; This error block catches any move up in bracketing level
     (ignore-errors
-      ;; Can't fail on semi-colon, marked as punctuation, so skipped
+      ;; Can't fail on semi-colon, as marked as punctuation so skipped
       ;; by sexp. However, can stop on bracketing.
 
       ;; This do...until loop steps backwards before trying any tests.
@@ -964,7 +991,7 @@ return: t if matched, else nil"
 ; (vala-syntax:preceeded-by-class-definition-p))
 ;;  (message "-%s-" (vala-syntax:preceeded-by-class-definition-p)))
 
- (defun vala-syntax:preceeded-by-class-definition-p-int ()
+(defun vala-syntax:preceeded-by-class-definition-p-int ()
    (interactive)
    (message "-%s-" (vala-syntax:preceeded-by-class-definition-p)))
 
@@ -1037,7 +1064,7 @@ else nil"
           (when (= (char-after) ?\()
             (setq return-code 1)
             (setq test-point (point))))
-;;(message " class definition test-point1: -%s-" test-point)
+        ;;(message " class definition test-point1: -%s-" test-point)
         ;; test for an open curly parenthesis. If so, jump back and
         ;; out. This takes us out of a code block.
         (setq open-parenthesis (nth 1 (syntax-ppss test-point)))
@@ -1048,8 +1075,16 @@ else nil"
             (setq test-point (point))))
 
         (goto-char test-point)
- ;;(message " class definition test-point2: -%s-" test-point)
-        (when (vala-syntax:preceeded-by-class-definition-p)
+        ;;(message " class definition test-point2: -%s-" test-point)
+
+        (when 
+            ;; direct calculation
+            (vala-syntax:preceeded-by-class-definition-p)
+          ;; cached results
+          ;; marginal 1/10 sec, not worth it.
+          ;; (vala-syntax:get-bracket-depth-cache
+          ;;     'vala-syntax:preceeded-by-class-definition-p
+          ;     (nth 0 (syntax-ppss test-point)))
           return-code)
         )))))
 ; (vala-syntax:class-or-class-level-definition-p)indiscrete.revelation +a[
@@ -1580,7 +1615,7 @@ body: if all keyword matching fails, code in this parameter is executed.
                         'font-lock-face
                         'font-lock-keyword-face)
      (goto-char (match-end 0))
-     (message "  is named as class -%s-" (point)) 
+     ;;(message "  is named as class -%s-" (point)) 
      ;; check for an inheritance list, and apply properties
      (when (and (vala-syntax:pskip-class-definition
                  'font-lock-class-definition-face)
@@ -1593,7 +1628,7 @@ body: if all keyword matching fails, code in this parameter is executed.
     ;; both followed by function-like syntax. Though this function could
     ;; handle that by recurse, propertize directly.
     ((looking-at "\\(?:delegate\\|signal\\)[ ]+")
-     (message "  is delegate/signal") 
+     ;;(message "  is delegate/signal") 
      (put-text-property (match-beginning 0) (match-end 0)
                         'font-lock-face
                         'font-lock-keyword-face)
@@ -1602,7 +1637,7 @@ body: if all keyword matching fails, code in this parameter is executed.
 
     ;; enum...
     ((looking-at "enum[ ]+")
-     (message "  is enum")
+     ;;(message "  is enum")
      (put-text-property (match-beginning 0) (match-end 0)
                         'font-lock-face
                         'font-lock-keyword-face)
@@ -1615,7 +1650,7 @@ body: if all keyword matching fails, code in this parameter is executed.
     ;; parts of multipart constructs, and both are oprators for
     ;; class typing.
     ((looking-at "\\(new\\|throws\\)[ ]+") 
-     (message "  is new or throws")
+     ;;(message "  is new or throws")
      (put-text-property (match-beginning 1) (match-end 1)
                         'font-lock-face
                         'font-lock-minor-keywords-face)
@@ -1754,8 +1789,7 @@ body: if all keyword matching fails, code in this parameter is executed.
 
 (defun vala-syntax:propertize-from-left-dummy (end)
   (when (looking-at "\\(?:\\(new\\|throws\\)\\|//\\)[ ]+") 
-    (goto-char (match-end 0)))
-)
+    (goto-char (match-end 0))))
 
 
 
@@ -1775,8 +1809,13 @@ body: if all keyword matching fails, code in this parameter is executed.
 (defun vala-syntax:propertize (start end)
   "See: syntax-propertize-function"
   (message "propertize area %s-%s" start end)
-  ;; TODO: Should we?  (vala-syntax:propertize-shell-preamble start end)
-
+  ;; reset cache
+  (when (not (= start vala-syntax:bracket-depth-cache-region-end-anchor))
+  (message "  uncontiguous cache reset -%s-"
+vala-syntax:bracket-depth-cache-region-end-anchor)
+    (vala-syntax:reset-bracket-depth-cache))
+    (setq vala-syntax:bracket-depth-cache-region-end-anchor  start)
+  ;; propertise from newlines
   (vala-syntax:propertize-syntactical-newline start end)
   ;; propertize strings.
   ;; Unfortunately, added to the semantic parse, this means three
