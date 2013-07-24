@@ -33,9 +33,12 @@
     (,vala-syntax:builtin-function-and-operator-keywords-opt-re
       1 font-lock-minor-keywords-face)
 
+    (,vala-syntax:value-keywords-opt-re
+      0 font-lock-constant-face)
+
     ;; doesn't work - why?
     (,vala-syntax:class-tree-keywords-opt-re
-      1 font-lock-namespace-face)
+      0 font-lock-namespace-face)
 
 
     ;; Annotations
@@ -72,7 +75,8 @@
             (goto-char (nth 8 state))
             ;; If block comment starts with multiple asterix, it must
             ;; be followed by an empty line e.g. "/**<space>\n"
-            (looking-at "/\\*\\(?:[^*]\\|\\*+\\s *$\\)")
+            ;;(looking-at "/\\*\\(?:[^*]\\|\\*+\\s *$\\)")
+ (looking-at vala-syntax:block-comment-start-re)
             )
       ;; block comment start ok
       font-lock-comment-face

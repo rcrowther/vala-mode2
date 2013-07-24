@@ -1,4 +1,6 @@
 == CHANGELOG
+Regex tidy, some fontlock changes
+Cache code written, but not worth it.
 Bug: Some line start symbols being matched by modifier propetizing
 Bug: Enum elements highlighting (again. added defenses)
 Enum/struct methods should be highlighted
@@ -31,10 +33,11 @@ Fill strings
 Tidy Regex - much deprecation needed
 Check regexps for consistency (define some as symbol?)
 
+Comment highlighting dying on ajustment
 
 Some generics not highlighting in the test .vapi file
 
-are @ esapes really working?
+are @ esapes (+ */&) really working?
 
 
 Some themes for > 8 bit terminals.

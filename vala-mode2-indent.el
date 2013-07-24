@@ -155,7 +155,7 @@ cannot be determined."
      ;; comments
      ;; TODO: This is capable of Java indentation, if anyone wants
      ;; that?
-     ((looking-at vala-syntax:first-line-block-not-grouped-comment-re)
+((looking-at vala-syntax:opening-grouped-comment-start-re)
       ;; The match could be beginning or end. if it exists, then the
       ;; match was not a block comment start.
       (if (match-beginning 1)

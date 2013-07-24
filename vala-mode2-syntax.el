@@ -16,7 +16,7 @@
 (require 'vala-mode2-faces)
 
 ;;;;
-;;;; Scala syntax regular expressions
+;;;; Regular expressions
 ;;;;
 
 ;;; Based on no specification whatsoever
@@ -37,111 +37,103 @@
 ;;;   subgroups may exist, C-x C-e (evaluate) to see full details.
 
 
+
+
+;;
+;; non-Vala re
+;;
+
 ;; Vala delimiters, but no quotes
 ;; deprecated?
 (defconst vala-syntax:delimiter-group ".,;")
-
-
-
-
-; -------------- Mod
-
-
-;;
-;; Basic re
-;;
  
 
-;; Vala directives
-;; TODO: This also covers script shebangs, which could be annoying?
-;; TODO: covering the whole line. Good idea or not? what does Valac
-;; say about this?
-(defconst vala-syntax:preprocessor-directive-re
-   "\\s *#[^\n]+\n")
 
-;; Primitive types
-;; unused, but could be used for a simple fontlock.
-(defconst vala-syntax:primitive-type-keywords-raw
- '("void" "bool" "char" "uchar" "short" "ushort" "int" "uint" "long" "ulong"
-   "size_t" "ssize_t" "int8" "uint8" "int16" "uint16" "int32" "uint32"
-   "int64" "uint64"
-   "unichar" "float" "double" "string"))
+;; line re
 
+;;(defconst vala-syntax:empty-line-re
+;;  "^[\t ]*$")
 
-
-(defconst vala-syntax:string-literal-delimiter-re
-;;  "\"\\(?:\\([^\"]\\)\\|\\(\"\"\\)\\)")
- ;; "\"\\(?:\"\"\\)?")
-  "\"\"?\"?")
-;(progn (when (looking-at vala-syntax:string-literal-delimiter-re)
-;(goto-char (match-end 0))))
-
-(defconst vala-syntax:comment-re
-"\\(?:/?\\*+\\|//\\)\\s *")
-
-;;(defconst vala-syntax:insignificant-line
-;;  (concat vala-syntax:comment-re "\\|\\s *$")
-;;"matches comment and empty lines")
-
-;; matches comments, with the special magic that
-;; if the line is the first line of a block, group 1 will
-;; be matched.
-(defconst vala-syntax:first-line-block-not-grouped-comment-re
-"\\(?:\\*+\\|\\(?:/\\(\\*+\\|/+\\)\\)\\)\\s *")
-
-(defconst vala-syntax:line-comment-re
-  "//+\\s *")
-
-(defconst vala-syntax:block-comment-re
-  "/?\\*+\\s *")
-
-(defconst vala-syntax:syntactical-newline-keyword-opt-re
-  (regexp-opt '("new" "throws") 'symbols)
-  "Match keywords defined, for propertizing purposes, as
-newlines. This regexp is bound by symbols.")
-;;(looking-at vala-syntax:syntactical-newline-keyword-opt-re)
+;;(defconst vala-syntax:empty-line-end-re
+;;  "[\t ]*$")
 
 (defconst vala-syntax:non-empty-line-grouped-re
   "\\(?:[;\n][ ]*[^;\n]\\)")
 
-(defconst vala-syntax:syntactical-newline-re
-  (concat vala-syntax:non-empty-line-grouped-re
-          "\\|//\\|\\(?:" 
-          vala-syntax:syntactical-newline-keyword-opt-re
-          "\\)")
-  "Match anything defined, for propertizing purposes, as
-newlines. Includes semi-colon, form-feed, dual
-forward-slash (i.e. single line comments) and the symbols 'new',
-'throws'")
-;;(progn (when (looking-at vala-syntax:syntactical-newline-re)
-;;(goto-char (match-end 0))))new 
 
 
+
+;; Vala symbol and non-code re
+
+;; Symbol re
 ;; though conventions exist,
 ;; symbols are suspected to be this simple definition.
 (defconst vala-syntax:vala-symbol-raw-re
   "[A-Za-z_][A-Za-z_0-9]*")
 
+
+;; Vala symbol
 (defconst vala-syntax:vala-symbol-re
  (concat "\\(" vala-syntax:vala-symbol-raw-re "\\)"))
 
 
+;; Vala directives
+;; TODO: This also covers script shebangs, which could be annoying?
+;; that could be done in fontlock, which may be faster?
+(defconst vala-syntax:preprocessor-directive-re
+  "[\t ]*#[^\n]+$"
+  "Match preprocessor directives.
+Matches a whitespace intro, to eol")
+
+;;(defconst vala-syntax:preamble-start-re
+;;  "\#\! \\!#[\t ]*$")
+
+
+
 ;; Code attributes
 (defconst vala-syntax:vala-code-attribute-start-re
-  (concat "\\[\\s *" vala-syntax:vala-symbol-raw-re))
-;(progn (when (looking-at vala-syntax:vala-code-attribute-start-re)
-;(goto-char (match-end 0))))[ Car
+  (concat "\\[" vala-syntax:vala-symbol-raw-re))
+
+
+
+;; Strings
+;; handled by the propertize function.
+
+
+
+;; Comment re
+
+(defconst vala-syntax:line-comment-start-re
+  "//")
+
+
+;; Valadoc block comments are distinctive, they start "/**" and nust
+;; have no following text.
+(defconst vala-syntax:block-comment-start-re
+  "/\\*+[ \t]*$")
+
+
+(defconst vala-syntax:comment-start-re
+  "/[/*]"
+  "Any comment start. Referenced in mode.el")
+
+
+;; match block comments, with the special magic that
+;; if the line is the first line of a block, group 1 will
+;; be matched.
+;; TODO: check if failed match is reliable?
+(defconst vala-syntax:opening-grouped-comment-start-re
+  "\\*+\\|\\(?:/\\(\\*+\\|/+\\)\\)"
+  "Match the start of any comment.
+Has a nested match which returns nil if this was a first line in
+a block comment, else t")
+
 
 
 
 ;;
 ;; OO re
 ;;
-
-;; Keywords to reference classes externally
-(defconst  vala-syntax:class-ref-keywords-raw
-  (regexp-opt '("using" "extern")))
-
 
 ;; Class (or classlike) definitions
 ;; followed by a definition of one symbol
@@ -156,6 +148,7 @@ forward-slash (i.e. single line comments) and the symbols 'new',
           vala-syntax:classlike-definition-keywords-opt-re
           "\\)"))
 ;;(looking-at vala-syntax:classlike-definition-keywords-and-bracketing-re)
+
 
 ;; Modifiers used for class, method and field descriptions.
 ; What is partial/params?
@@ -184,11 +177,11 @@ note: not 'symbols. Bounded elsewhere.")
 
 
 ;; Keywords for OO access
-(defconst  vala-syntax:access-modifier-keywords-raw
-  '("internal" "private" "protected" "public"))
+;;(defconst  vala-syntax:access-modifier-keywords-raw
+;;  '("internal" "private" "protected" "public"))
 
-(defconst  vala-syntax:access-modifier-keywords-opt-re
-  (regexp-opt vala-syntax:access-modifier-keywords-raw 'words))
+;;(defconst  vala-syntax:access-modifier-keywords-opt-re
+;;  (regexp-opt vala-syntax:access-modifier-keywords-raw 'words))
 
 
 ;; Keywords which reference class heirarchies
@@ -196,7 +189,7 @@ note: not 'symbols. Bounded elsewhere.")
   '("base" "this"))
 
 (defconst  vala-syntax:class-tree-keywords-opt-re
-  (regexp-opt vala-syntax:class-tree-keywords-raw 'words))
+  (regexp-opt vala-syntax:class-tree-keywords-raw 'symbols))
 
 
 
@@ -215,19 +208,70 @@ note: not 'symbols. Bounded elsewhere.")
 
 
 ;;
-;; Other keyword re
+;; Keyword re
 ;;
 ;; Some of these are put in seperate groups so they can be parsed for
 ;; indenting and fontlocking.
 
+
+;; Primitive types
+;; unused, but could be used for a simple fontlock.
+(defconst vala-syntax:primitive-type-keywords-raw
+ '("void" "bool" "char" "uchar" "short" "ushort" "int" "uint" "long" "ulong"
+   "size_t" "ssize_t" "int8" "uint8" "int16" "uint16" "int32" "uint32"
+   "int64" "uint64"
+   "unichar" "float" "double" "string"))
+
+
+;; Keywords to reference classes externally
+(defconst  vala-syntax:class-ref-keywords-raw
+  (regexp-opt '("using" "extern")))
+
+
+;; Value keywords
+(defconst  vala-syntax:value-keywords-raw
+  '("true" "false" "null"))
+
+(defconst vala-syntax:value-keywords-opt-re
+  (regexp-opt vala-syntax:value-keywords-raw))
+
+
+;; Gee material
+(defconst  vala-syntax:gee-method-keywords-raw
+  '("add" "remove" "addAll"))
+
+(defconst  vala-syntax:gee-method-keywords-opt-re
+  (regexp-opt vala-syntax:gee-method-keywords-raw 'words))
+
+
+
+;; catch group for unclassified keywords.
+(defconst  vala-syntax:unclassified-keywords-raw
+  '("sizeof" "typeof"
+    "for" "foreach" "in"
+    "switch" "lock"
+    "return" "continue" "break" "yield"
+    "throw" "var" 
+    ))
+
+(defconst  vala-syntax:unclassified-keywords-opt-re
+  (regexp-opt vala-syntax:unclassified-keywords-raw 'words))
+
+
+
+;;
+;; Parsing significant keyword re
+;;
+
 ;; keywords for ops followed by a declaration of the class to be used
 ;; for the operation.
 ;; TODO: doesn't cover static type casting?
-(defconst vala-syntax:op-keyword-followed-by-class-declaration-raw
-  '( "is" "as" "throws" "new"))
+;; Unused, but could be
+;;(defconst vala-syntax:op-keyword-followed-by-class-declaration-raw
+;;  '( "is" "as" "throws" "new"))
 
-(defconst vala-syntax:op-keywords-followed-by-class-declaration-re
-  (regexp-opt vala-syntax:op-keyword-followed-by-class-declaration-raw))
+;;(defconst vala-syntax:op-keywords-followed-by-class-declaration-re
+;;  (regexp-opt vala-syntax:op-keyword-followed-by-class-declaration-raw))
 
 
 ;; Some builtins maybe don't always require a brace
@@ -253,51 +297,6 @@ note: not 'symbols. Bounded elsewhere.")
   (regexp-opt vala-syntax:irregular-conditional-keywords-raw))
 
 
-;; Value keywords
-(defconst  vala-syntax:value-keywords-raw
-  '("true" "false" "null"))
-
-(defconst vala-syntax:value-keywords-re
-  (regexp-opt vala-syntax:value-keywords-raw))
-
-
-;; Gee material
-(defconst  vala-syntax:gee-method-keywords-raw
-  '("add" "remove" "addAll"))
-
-(defconst  vala-syntax:gee-method-keywords-opt-re
-  (regexp-opt vala-syntax:gee-method-keywords-raw 'words))
-
-
-;; Other keywords
-;; catch group for unclassified keywords.
-(defconst  vala-syntax:unclassified-keywords-raw
-  '("sizeof" "typeof"
-    "for" "foreach" "in"
-    "switch" "lock"
-    "return" "continue" "break" "yield"
-    "throw" "var" 
-    ))
-
-(defconst  vala-syntax:unclassified-keywords-opt-re
-  (regexp-opt vala-syntax:unclassified-keywords-raw 'words))
-
-
-
-
-;;
-;; Utility re
-;;
-
-(defconst vala-syntax:line-comment-start-re
-  "//")
-
-;; Valadoc comments are distinctive, they start "/**" and nust have no
-;; following text.
-(defconst vala-syntax:block-comment-start-re
-  "/\*\*\s*^")
-
-
 
 ;;
 ;; Keyword collections
@@ -307,6 +306,7 @@ note: not 'symbols. Bounded elsewhere.")
 ;; Non-propertized keywords
 ;; group for keywords with no propertize action.
 (defconst vala-syntax:non-propertized-keywords-opt-re
+;;  Used for syntactical rejection
   ;; the keyword groups missing are
   ;; - anything to do with OO definitions
   ;; - parameter definitions
@@ -319,7 +319,7 @@ note: not 'symbols. Bounded elsewhere.")
     vala-syntax:gee-method-keywords-raw
     vala-syntax:unclassified-keywords-raw
     )
-   'words))
+   'symbols))
 
 
 (defconst vala-syntax:builtin-function-and-operator-keywords-opt-re
@@ -336,7 +336,7 @@ note: not 'symbols. Bounded elsewhere.")
     vala-syntax:gee-method-keywords-raw
     vala-syntax:unclassified-keywords-raw
     )
-   'words))
+   'symbols))
 
 ;;vala-syntax:non-propertized-keywords-opt-re
 
@@ -345,6 +345,34 @@ note: not 'symbols. Bounded elsewhere.")
 ;; See vala-mode2-fontlock.
 
 
+
+;;
+;; Syntactical newline re
+;;
+
+(defconst vala-syntax:syntactical-newline-keyword-opt-re
+  (regexp-opt '("new" "throws") 'symbols)
+  "Match keywords defined, for propertizing purposes, as
+newlines. This regexp is bound by symbols.")
+;;(looking-at vala-syntax:syntactical-newline-keyword-opt-re)
+
+
+(defconst vala-syntax:syntactical-newline-re
+  (concat vala-syntax:non-empty-line-grouped-re
+          "\\|//\\|\\(?:" 
+          vala-syntax:syntactical-newline-keyword-opt-re
+          "\\)")
+  "Match anything defined, for propertizing purposes, as
+newlines. Includes semi-colon, form-feed, dual
+forward-slash (i.e. single line comments) and the symbols 'new',
+'throws'")
+;;(progn (when (looking-at vala-syntax:syntactical-newline-re)
+;;(goto-char (match-end 0))))new 
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun vala-syntax:backward-sexp ()
   "Move backward one vala expression. It can be: parameter
   list (value or type), id, reserved symbol, keyword, block, or
@@ -361,56 +389,6 @@ note: not 'symbols. Bounded elsewhere.")
     (goto-char (or (scan-sexps (point) -1) (buffer-end -1)))
     (backward-prefix-chars)))
 
-
-
-;;;
-;;; Vala non-keyword regexs
-;;;
-
-
-;; Put before regex to account for keyword escapes.
-;; deprecated?
-(defconst vala-syntax:vala-escape-lock-re
-  "\\(?:^\\|[^@]\\)")
-
-
-(defconst vala-syntax:preamble-start-re
-  "\#\!")
-
-(defconst vala-syntax:preamble-end-re
-  "\!\\(\#\\)[ \t]*$")
-
-(defconst vala-syntax:empty-line-re
-  "^\\s *$")
-
-(defconst vala-syntax:empty-line-end-re
-  "\\s *$")
-
-(defconst vala-syntax:comment-start-re
-  "/[/*]")
-
-(defconst vala-syntax:single-line-comment-start-re
-  "//")
-
-
-
-
-;;
-;; General regexes
-;;
-
-;; Match end of code line
-;; OneOf(space, newline, comment)
-;; deprecated?
-(defconst vala-syntax:end-of-code-line-re
-  (concat "\\([ ]\\|$\\|" vala-syntax:line-comment-start-re "\\)")
-  "A special regexp that can be concatenated to an other regular
-  expression when used with vala-syntax:looking-back-token. Not
-  meaningfull in other contexts.")
-
-
-(defconst vala-syntax:multiLineStringLiteral-end-re
-  "\"\"+\\(\"\\)")
 
 
 
@@ -600,7 +578,7 @@ note: not 'symbols. Bounded elsewhere.")
 ;; Code Attributes
 
 ;; There's problems with code attributes.  From c#, and other
-;; languages, they muddle the index operator with annotation
+;; languages, they ambiguate the index operator with annotation
 ;; bracketing. Searching for text won't help, as all kinds of
 ;; variables may be in an index operator. Filtering names,
 ;; e.g. Deprecated, Compact, CCode... is foiled by vapi flexibility in
@@ -693,8 +671,17 @@ calculated.
 ;; vala-syntax:bracket-depth-cache))
 
 
-(defun vala-syntax:reset-bracket-depth-cache ()
-  (setq vala-syntax:bracket-depth-cache-depth 0))
+(defun vala-syntax:reset-bracket-depth-cache (start)
+  "Reset the cache.
+Will not reset if start is similar to last call (i.e. this region
+starts in the same place, so has the same initial data)"
+  (when (not (= start vala-syntax:bracket-depth-cache-region-end-anchor))
+    (message "  uncontiguous cache reset -%s-"
+             vala-syntax:bracket-depth-cache-region-end-anchor)
+    (setq vala-syntax:bracket-depth-cache-depth 0))
+  (setq vala-syntax:bracket-depth-cache-region-end-anchor  start))
+
+
 
 
 ;;
@@ -1699,7 +1686,7 @@ body: if all keyword matching fails, code in this parameter is executed.
   (cond
    ;; checking for some different formats of line start
    ;; single line comments
-   ((looking-at vala-syntax:single-line-comment-start-re)
+   ((looking-at vala-syntax:line-comment-start-re)
     (vala-syntax:pskip-single-line-comment))
 
    ;; preprocessor directives
@@ -1718,9 +1705,7 @@ body: if all keyword matching fails, code in this parameter is executed.
 
    ;; breaking on uninteresting keywords may spare some performance,
    ;; but more importantly, some detection edge cases later.
-   ((looking-at vala-syntax:non-propertized-keywords-opt-re)
-    ;; lock anyhow?
-    t)
+   ((looking-at vala-syntax:non-propertized-keywords-opt-re) )
 
    (t
     ;;(message "left propertize %s" (point))
@@ -1810,11 +1795,8 @@ body: if all keyword matching fails, code in this parameter is executed.
   "See: syntax-propertize-function"
   (message "propertize area %s-%s" start end)
   ;; reset cache
-  (when (not (= start vala-syntax:bracket-depth-cache-region-end-anchor))
-  (message "  uncontiguous cache reset -%s-"
-vala-syntax:bracket-depth-cache-region-end-anchor)
-    (vala-syntax:reset-bracket-depth-cache))
-    (setq vala-syntax:bracket-depth-cache-region-end-anchor  start)
+  ;;(vala-syntax:reset-bracket-depth-cache))
+
   ;; propertise from newlines
   (vala-syntax:propertize-syntactical-newline start end)
   ;; propertize strings.
