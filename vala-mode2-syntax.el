@@ -370,6 +370,29 @@ forward-slash (i.e. single line comments) and the symbols 'new',
 ;;(goto-char (match-end 0))))new 
 
 
+(defconst vala-syntax:syntactical-newline-re2
+  (concat vala-syntax:non-empty-line-grouped-re
+          "\\|\\(?:" 
+          vala-syntax:syntactical-newline-keyword-opt-re
+          "\\)")
+  "Match anything defined, for propertizing purposes, as
+newlines. Includes semi-colon, form-feed, and the symbols 'new',
+'throws'")
+;;(progn (when (looking-at vala-syntax:syntactical-newline-re)
+;;(goto-char (match-end 0))))new 
+
+(defconst vala-syntax:syntactical-newline-re3
+  (concat 
+          "[;\n]\\|\\(?:" 
+          vala-syntax:syntactical-newline-keyword-opt-re
+          "\\)")
+  "Match anything defined, for propertizing purposes, as
+newlines. Includes semi-colon, form-feed, and the symbols 'new',
+'throws'")
+;;(progn (when (looking-at vala-syntax:syntactical-newline-re)
+;;(goto-char (match-end 0))))new 
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -555,7 +578,7 @@ forward-slash (i.e. single line comments) and the symbols 'new',
      ;; 4: 2nd char of two char comment end
      ;; n: nestable
      ;; Block comments are set as nestabe, not because they are or not
-     ;; according to Vala spec, but because this pakes them easy to
+     ;; according to Vala spec, but because this makes them easy to
      ;; spot using integerp from a parse state.
      (modify-syntax-entry ?\/  ". 14n" syntab)
      ;; 2: 2nd char of 2 char comment start
@@ -595,6 +618,7 @@ forward-slash (i.e. single line comments) and the symbols 'new',
       (let ((start-mark (match-beginning 0)))
         (goto-char (match-end 0))
         (when (looking-at "[ ]*(")
+          ;; this can error?
           (forward-sexp))
         (when (looking-at "[  ]*]")
           (set-match-data (list start-mark (match-end 0)))
@@ -613,6 +637,48 @@ forward-slash (i.e. single line comments) and the symbols 'new',
   (/= (buffer-size)
       (- (point-max)
          (point-min))))
+
+
+(defun vala-syntax:look-backward-p (re)
+  (save-excursion
+    (while (not (or (bobp)
+                    (looking-at re)
+                    (progn
+                      (while (and (not (bobp)) (= (char-before)?\s))
+                        (backward-char))
+                      (cond
+                       ((= (char-after) ?\;) t)
+                       ((looking-at "^\\s *$"))
+                       (t  (progn (backward-char) nil)))
+                      )))
+      )
+    (looking-at re)))
+; (vala-syntax:look-backward-p "class")
+
+
+;; being used someplace?
+;; TODO: not in this form. see indent.
+(defun vala-syntax:beginning-of-code-line ()
+  (interactive)
+  "Move to the beginning of code on the line, or to the end of
+the line, if the line is empty. Return the new point.  Not to be
+called on a line whose start is inside a comment, i.e. a comment
+begins on the previous line and continues past the start of this
+line."
+  ;; TODO: make it work even if the start IS inside a comment
+  (beginning-of-line)
+  (let ((eol (line-end-position))
+        (pos (point)))
+
+    (while (and (forward-comment 1)
+                (< (point) eol))
+      (setq pos (point)))
+    ;; Now we are either on a different line or at eol.
+    ;; Pos is the last point one the starting line.
+    (if (> (point) eol)
+        (goto-char pos)
+      (skip-syntax-forward " " eol)
+      (point))))
 
 
 ;;
@@ -710,10 +776,76 @@ return: t if space was skipped, else f"
     (goto-char (match-end 0)) t))
 ;(vala-syntax:skip-char-tab-space-and-line-ends)
 
+(defun vala-syntax:skip-forward-comment-or-string (parse-state)
+  ;; 3 = in a string 4 = in a comment
+  (when (or (nth 3 parse-state)  (nth 4 parse-state))
+    (goto-char (nth 8 parse-state))
+    (if (nth 4 parse-state)
+        ;; use forward comment. Sexps leap bracketing and
+        ;; punctuation also.
+        (forward-comment 1)
+      ;; sexp finishes tight on strings
+      (forward-sexp 1)) t ))
 
+ 
 ;; much used, expensive?
 ;; inline has little effect
 (defun vala-syntax:goto-syntactical-line-start (limit)
+  "Goto items regarded as syntactical line starts.
+These include semi-colons, LF, 'new', 'throws' or line-comment
+starts.  The function ignores matches in strings and comments,
+and skips newlines.
+ 
+The function positions point to read the new text, i.e. after
+semi-colon and LF but before a 'new' symbol or line-comment
+start.
+
+Because the function will not skip keywords, calling
+code must make a move over keyword points returned supplied
+by this function, otherwise parsing will step into an infinite
+loop.
+return: t if found one and less than limit, else nil"
+  ;; This function needs to,
+  ;; - ignore bracketing
+  ;; - catch punctuation character ';'
+  ;; - catch whitespace character '\n'
+  ;; - match keywords
+  ;; Since the scan has been done, it would seem a good idea to use
+  ;; it, but sexp skipping has disadvantages, missing punctuation
+  ;; (linends) and skating bracketing in a LISPy way.
+  ;; However, it is fast when it can be trusted, so this function is
+  ;; now a hybrid of regex and sexp parsing. It is is also heavy duty
+  ;; on testing, but profiling showed this testing to be very
+  ;; advantageous.
+   (let ((parse-state nil) (anchor nil))
+     (setq anchor (point))
+
+     (while (and
+             ;; always stop at limit
+             (< (point) limit)
+             (progn
+               ;; find us a newline
+               (re-search-forward vala-syntax:syntactical-newline-re3 limit t)
+               ;; ways to continue loop.
+               ;; had a match (i.e. no match fails)
+               (when (> (point) anchor)
+                 ;; keyword, move back
+                 (when (match-beginning 1) (goto-char (match-beginning 1)))
+                 (setq parse-state (syntax-ppss (point)))
+                 (when (or
+                        ;; looking at line comment starts, empty lines
+                        (looking-at "[ \t]*\\(?://\\|$\\)")
+                        ;; ...or in string, comment
+                        (vala-syntax:skip-forward-comment-or-string parse-state))
+                   (setq anchor (point)) t )))))
+     (and (> (point) anchor) (< (point) limit))))
+
+;; (defun vala-syntax:goto-syntactical-line-start-interactive ()
+;;   (interactive)
+;;   (vala-syntax:goto-syntactical-line-start (point-max)))
+
+
+(defun vala-syntax:goto-syntactical-line-start2 (limit)
   "Goto items regarded as syntactical line starts.
 These include semi-colons, LF, 'new', 'throws' or line-comment starts.
 The function ignores matches in strings and comments, and skips newlines.
@@ -736,54 +868,92 @@ return: t if found one and less than limit, else nil"
   ;; so regex.
   ;; the complexity is in searching for 'new', 'throws' etc.
   ;; could be mega-regex, but keep it simple.
-  (let ((parse-state nil))
-    (while (and
-            ;; always stop at limit
-            (< (point) limit)
-            (progn
-              (setq parse-state (syntax-ppss (point)))
-              (cond
-               ((or 
-                 ;; 3 = in a string
-                 (nth 3 parse-state)
-                 ;; 4 = in a comment
-                 (nth 4 parse-state)
-                 ;; the regexp skips empty lines.
-                 (not (looking-at vala-syntax:syntactical-newline-re)))
-                (forward-char) t)
-               (t nil)
-               )))))
+;; forward char throws errors.
+(ignore-errors
+  (while (and
+;;(re-search-forward vala-syntax:syntactical-newline-re2)
+          ;; always stop at limit
+          (< (point) limit)
+          (progn
+            ;; sexp-skip any comments and strings.
+            (when (looking-at "\"\\|\\(/[/*]\\)")
+              (if (match-beginning 1)
+                  ;; use forward comment. Sexps leap bracketing and
+                  ;; punctuation also.
+                  (forward-comment 1)
+                ;; sexp finishes tight on strings
+                (forward-sexp 1)))
+            ;; the regexp skips empty lines.
+            (when (not (looking-at vala-syntax:syntactical-newline-re2))
+              (forward-char) t)
+            )))
   ;; nudge over LF and semi-colon
   (when (or (= (char-after) ?\n) (= (char-after) ?\;))
     (forward-char))
-
   ;;(message "ok at point %s" (point)))
 ;;(message "quit at point %s" (point))
 ;;  (message " limit at quit %s" limit))
-  (< (point) limit))
-;;"(vala-syntax:goto-syntactical-line-start (line-end-position))
-  ; new"
-
-;; (defun vala-syntax:goto-syntactical-line-start-interactive ()
-;;   (interactive)
-;;   (vala-syntax:goto-syntactical-line-start (point-max)))
+  (< (point) limit)))
+;;(vala-syntax:goto-syntactical-line-start2 (point-max))
+  ; new
 
 
-(defun vala-syntax:look-backward-p (re)
-  (save-excursion
-    (while (not (or (bobp)
-                    (looking-at re)
-                    (progn
-                      (while (and (not (bobp)) (= (char-before)?\s))
-                        (backward-char))
-                      (cond
-                       ((= (char-after) ?\;) t)
-                       ((looking-at "^\\s *$"))
-                       (t  (progn (backward-char) nil)))
-                      )))
-      )
-    (looking-at re)))
-; (vala-syntax:look-backward-p "class")
+;; (defun vala-syntax:goto-syntactical-line-start2 (limit)
+;;   "Goto items regarded as syntactical line starts.
+;; These include semi-colons, LF, 'new', 'throws' or line-comment starts.
+;; The function ignores matches in strings and comments, and skips newlines.
+ 
+;; The function positions point to read the new text, i.e. after
+;; semi-colon and LF but before a 'new' symbol or line-comment
+;; start.
+
+;; Because the function will not skip keywords, calling
+;; code must make a move over all keyword points returned supplied
+;; by this function, otherwise parsing will step into an infinite
+;; loop.
+;; return: t if found one and less than limit, else nil"
+;;   ;; Since the scan has been done, it would seem a good idea to use it,
+;;   ;; but sexp skipping has disadvantages. This function needs to,
+;;   ;; - ignore bracketing
+;;   ;; - catch punctuation character ';'
+;;   ;; - catch whitespace character '\n'
+;;   ;; - match keywords
+;;   ;; so regex.
+;;   ;; the complexity is in searching for 'new', 'throws' etc.
+;;   ;; could be mega-regex, but keep it simple.
+;; ;; forward char throws errors.
+;;   (let ((anchor (point)))
+;;   (while (and
+;;           ;; always stop at limit
+;;           (< (point) limit)
+;;           (progn
+;;             ;; sexp-skip any comments and strings.
+;;             (if (looking-at "\"\\|\\(/[/*]\\)")
+;;                 (if (match-beginning 1)
+;;                     ;; use forward comment. Sexps leap bracketing and
+;;                     ;; punctuation also.
+;;                     (forward-comment 1)
+;;                   ;; sexp finishes tight on strings
+;;                   (forward-sexp 1))
+;;                   (setq anchor (point)))
+;;             (if (> (re-search-forward vala-syntax:syntactical-newline-re2) anchor)
+;;               (goto-char (match-beginning 0))
+;;               (> (re-search-forward vala-syntax:syntactical-newline-re2) anchor) 
+;;            ;; nudge over LF and semi-colon
+;;             (when (or (= (char-after) ?\n) (= (char-after) ?\;))
+;;               (forward-char))
+
+;;               nil))))
+
+;;   ;;(message "ok at point %s" (point)))
+;; ;;(message "quit at point %s" (point))
+;; ;;  (message " limit at quit %s" limit))
+;;   (and (> (point) anchor) (< (point) limit))))
+
+
+ (defun vala-syntax:goto-syntactical-line-start-interactive ()
+   (interactive)
+   (vala-syntax:goto-syntactical-line-start (point-max)))
 
 
 (defun vala-syntax:skip-syntax-symbol-path ()
@@ -855,7 +1025,7 @@ return: t if a type was matched, else nil"
             ;; this can error?
             ;;(goto-char (scan-lists (point) 1 0)) t)
             ;; skip the parentheses
-            ;; is there a return or error?
+            ;;TODO: this can error?
             (forward-sexp) t)
 
            ((looking-at "\\(?:[a-zA-Z]\\)")
@@ -1217,22 +1387,39 @@ checks if the previous character is a backslash escape, which is not itself back
 
 
 (defun vala-syntax:propertize-strings (start end)
-  "Add string properties to inverted comma characters in a block of text.
+  "Add string properties to inverted-comma characters in a block of text.
 Ignores text inside comments."
   (goto-char start)
   ;; stash the matches so syntax-ppss will not interfere with them
   (let ((found-end nil) (found-start nil) (syntax-parse nil))
-  (while (re-search-forward "\"+" end t)
-    (setq found-end (match-end 0))
-    (setq found-start (match-beginning 0))
-    (setq syntax-parse (syntax-ppss found-start))
-    (if (or
-         ;; if escaped, ignore and move on.
-         (vala-syntax:escaped-char-p found-start)
-         ;; 4 = inside comment, ignore and move on.
-         (nth 4 syntax-parse))
-        (goto-char (+ found-end 1))
-      (progn
+  (while (re-search-forward "\"+\\|\\(//\\)" end t)
+    (if (match-beginning 1)
+        (progn
+          (put-text-property (match-beginning 1) (+ (match-beginning 1) 1) 
+                             'syntax-table
+                             (list 11 nil))
+          ;; put the comment end before the end of the line
+          ;; this is, I understand, a little unconventional, but
+          ;; means comment skipping will never skip the line end
+          ;; after one of these comments. Which we want, as we detect the line
+          ;; ends to maybe propertize. And if it is the final character, and not the
+          ;; linend, which delimits a comment, this makes no difference for,
+          ;; say, fontlocking the line.
+          (put-text-property (- (line-end-position) 1) (line-end-position)
+                             'syntax-table
+                             (list 12 nil))
+          (goto-char (line-end-position))
+          )
+      (setq found-end (match-end 0))
+      (setq found-start (match-beginning 0))
+      (setq syntax-parse (syntax-ppss found-start))
+      (if (or
+           ;; if escaped, ignore and move on.
+           (vala-syntax:escaped-char-p found-start)
+           ;; 4 = inside comment, ignore and move on.
+           (nth 4 syntax-parse))
+          (goto-char (+ found-end 1))
+        (progn
         ;; propertizing, in some way.
         ;; Strings may have been left unbalanced by a JIT parse (or
         ;; something) that stops in the middle of a string. So test to
@@ -1260,7 +1447,7 @@ Ignores text inside comments."
                                'syntax-table
                                (list 7 nil))
             (goto-char (+ found-end 1)))
-          ))))))
+          )))))))
 
 
 ;;
@@ -1549,6 +1736,7 @@ return: undefined."
             ;; skip space
             (vala-syntax:skip-char-space)
             ;; test for and skip defaults
+            ;; TODO: can error?
             (when (and (= (char-after) ?\=) (<= (point) limit))
             (forward-sexp))
 
@@ -1686,8 +1874,8 @@ body: if all keyword matching fails, code in this parameter is executed.
   (cond
    ;; checking for some different formats of line start
    ;; single line comments
-   ((looking-at vala-syntax:line-comment-start-re)
-    (vala-syntax:pskip-single-line-comment))
+   ;;((looking-at vala-syntax:line-comment-start-re)
+    ;;(vala-syntax:pskip-single-line-comment))
 
    ;; preprocessor directives
    ((looking-at vala-syntax:preprocessor-directive-re)
@@ -1773,8 +1961,7 @@ body: if all keyword matching fails, code in this parameter is executed.
 )
 
 (defun vala-syntax:propertize-from-left-dummy (end)
-  (when (looking-at "\\(?:\\(new\\|throws\\)\\|//\\)[ ]+") 
-    (goto-char (match-end 0))))
+   (forward-char))
 
 
 
@@ -1784,7 +1971,7 @@ body: if all keyword matching fails, code in this parameter is executed.
   (while
       (progn
         (vala-syntax:propertize-from-left end)
-       ;; (vala-syntax:propertize-from-left-dummy end)
+        ;; (vala-syntax:propertize-from-left-dummy end)
         (progn
           ;;(message "left propertize %s" (point))
           (vala-syntax:goto-syntactical-line-start end)
@@ -1796,7 +1983,7 @@ body: if all keyword matching fails, code in this parameter is executed.
   (message "propertize area %s-%s" start end)
   ;; reset cache
   ;;(vala-syntax:reset-bracket-depth-cache))
-
+  (vala-syntax:propertize-strings start end)
   ;; propertise from newlines
   (vala-syntax:propertize-syntactical-newline start end)
   ;; propertize strings.
@@ -1810,37 +1997,8 @@ body: if all keyword matching fails, code in this parameter is executed.
   ;; strings in comments comments never get marked. Isn't there a
   ;; variable someplace making comments parathesis/string reactive?
   ;; Should this ordering be reacting to that?
-  (vala-syntax:propertize-strings start end)
+
   )
 
-
-
-;;;
-;;; General syntax
-;;;
-
-;; being used someplace?
-;; TODO: not in this form. see indent.
-(defun vala-syntax:beginning-of-code-line ()
-  (interactive)
-  "Move to the beginning of code on the line, or to the end of
-the line, if the line is empty. Return the new point.  Not to be
-called on a line whose start is inside a comment, i.e. a comment
-begins on the previous line and continues past the start of this
-line."
-  ;; TODO: make it work even if the start IS inside a comment
-  (beginning-of-line)
-  (let ((eol (line-end-position))
-        (pos (point)))
-
-    (while (and (forward-comment 1)
-                (< (point) eol))
-      (setq pos (point)))
-    ;; Now we are either on a different line or at eol.
-    ;; Pos is the last point one the starting line.
-    (if (> (point) eol)
-        (goto-char pos)
-      (skip-syntax-forward " " eol)
-      (point))))
 
 (provide 'vala-mode2-syntax)

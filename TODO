@@ -1,4 +1,6 @@
 == CHANGELOG
+New hybrid newline function
+Changed syntactical newline search to use some sexp
 Regex tidy, some fontlock changes
 Cache code written, but not worth it.
 Bug: Some line start symbols being matched by modifier propetizing
@@ -30,10 +32,10 @@ Fill strings
 
 == TODO
 
-Tidy Regex - much deprecation needed
+Tidy Regex - second look needed
 Check regexps for consistency (define some as symbol?)
 
-Comment highlighting dying on ajustment
+Comment highlighting dying on adjustment
 
 Some generics not highlighting in the test .vapi file
 
