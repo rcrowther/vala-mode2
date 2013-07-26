@@ -1,4 +1,5 @@
 == CHANGELOG
+Bug: Some generics not highlighting in the test .vapi file (partial solution, added "owned" to parameter directives)
 New hybrid newline function
 Changed syntactical newline search to use some sexp
 Regex tidy, some fontlock changes
@@ -37,7 +38,7 @@ Check regexps for consistency (define some as symbol?)
 
 Comment highlighting dying on adjustment
 
-Some generics not highlighting in the test .vapi file
+Some generics not highlighting in the test .vapi file (generic method symbols failing)
 
 are @ esapes (+ */&) really working?
 
@@ -55,7 +56,9 @@ Maybe some would like a choice about using the semantic face function (especiall
 Some of the new font faces could/should inherit, but I never figured out how to do that *and* alter them.
 
 
+Cann't put URLs into comments without comment scanning switched off.
 
+React to comment scanning variable.
 
 
 == Indenting

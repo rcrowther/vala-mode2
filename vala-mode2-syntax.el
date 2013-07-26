@@ -198,7 +198,7 @@ note: not 'symbols. Bounded elsewhere.")
 ;; TODO: rename to parameter modifiers.
 ;; May need others - weak, unowned?
 (defconst  vala-syntax:param-directive-opt-re
-  (regexp-opt '("ref" "out")))
+  (regexp-opt '("ref" "out" "owned")))
 
 ;;TODO: keywords missing here?
 (defconst  vala-syntax:param-directive-keywords-seq-re
@@ -811,11 +811,11 @@ return: t if found one and less than limit, else nil"
   ;; - catch whitespace character '\n'
   ;; - match keywords
   ;; Since the scan has been done, it would seem a good idea to use
-  ;; it, but sexp skipping has disadvantages, missing punctuation
+  ;; sexp skipping, but it has disadvantages, missing punctuation
   ;; (linends) and skating bracketing in a LISPy way.
-  ;; However, it is fast when it can be trusted, so this function is
-  ;; now a hybrid of regex and sexp parsing. It is is also heavy duty
-  ;; on testing, but profiling showed this testing to be very
+  ;; However, when it can be trusted, it is fast, so this function is
+  ;; a hybrid of regex and sexp parsing. It is is also heavy duty
+  ;; on testing, but profiling shows testing to be very
   ;; advantageous.
    (let ((parse-state nil) (anchor nil))
      (setq anchor (point))
@@ -833,7 +833,7 @@ return: t if found one and less than limit, else nil"
                  (when (match-beginning 1) (goto-char (match-beginning 1)))
                  (setq parse-state (syntax-ppss (point)))
                  (when (or
-                        ;; looking at line comment starts, empty lines
+                        ;; looking at line comment starts, or empty lines
                         (looking-at "[ \t]*\\(?://\\|$\\)")
                         ;; ...or in string, comment
                         (vala-syntax:skip-forward-comment-or-string parse-state))
@@ -843,112 +843,6 @@ return: t if found one and less than limit, else nil"
 ;; (defun vala-syntax:goto-syntactical-line-start-interactive ()
 ;;   (interactive)
 ;;   (vala-syntax:goto-syntactical-line-start (point-max)))
-
-
-(defun vala-syntax:goto-syntactical-line-start2 (limit)
-  "Goto items regarded as syntactical line starts.
-These include semi-colons, LF, 'new', 'throws' or line-comment starts.
-The function ignores matches in strings and comments, and skips newlines.
- 
-The function positions point to read the new text, i.e. after
-semi-colon and LF but before a 'new' symbol or line-comment
-start.
-
-Because the function will not skip keywords, calling
-code must make a move over all keyword points returned supplied
-by this function, otherwise parsing will step into an infinite
-loop.
-return: t if found one and less than limit, else nil"
-  ;; Since the scan has been done, it would seem a good idea to use it,
-  ;; but sexp skipping has disadvantages. This function needs to,
-  ;; - ignore bracketing
-  ;; - catch punctuation character ';'
-  ;; - catch whitespace character '\n'
-  ;; - match keywords
-  ;; so regex.
-  ;; the complexity is in searching for 'new', 'throws' etc.
-  ;; could be mega-regex, but keep it simple.
-;; forward char throws errors.
-(ignore-errors
-  (while (and
-;;(re-search-forward vala-syntax:syntactical-newline-re2)
-          ;; always stop at limit
-          (< (point) limit)
-          (progn
-            ;; sexp-skip any comments and strings.
-            (when (looking-at "\"\\|\\(/[/*]\\)")
-              (if (match-beginning 1)
-                  ;; use forward comment. Sexps leap bracketing and
-                  ;; punctuation also.
-                  (forward-comment 1)
-                ;; sexp finishes tight on strings
-                (forward-sexp 1)))
-            ;; the regexp skips empty lines.
-            (when (not (looking-at vala-syntax:syntactical-newline-re2))
-              (forward-char) t)
-            )))
-  ;; nudge over LF and semi-colon
-  (when (or (= (char-after) ?\n) (= (char-after) ?\;))
-    (forward-char))
-  ;;(message "ok at point %s" (point)))
-;;(message "quit at point %s" (point))
-;;  (message " limit at quit %s" limit))
-  (< (point) limit)))
-;;(vala-syntax:goto-syntactical-line-start2 (point-max))
-  ; new
-
-
-;; (defun vala-syntax:goto-syntactical-line-start2 (limit)
-;;   "Goto items regarded as syntactical line starts.
-;; These include semi-colons, LF, 'new', 'throws' or line-comment starts.
-;; The function ignores matches in strings and comments, and skips newlines.
- 
-;; The function positions point to read the new text, i.e. after
-;; semi-colon and LF but before a 'new' symbol or line-comment
-;; start.
-
-;; Because the function will not skip keywords, calling
-;; code must make a move over all keyword points returned supplied
-;; by this function, otherwise parsing will step into an infinite
-;; loop.
-;; return: t if found one and less than limit, else nil"
-;;   ;; Since the scan has been done, it would seem a good idea to use it,
-;;   ;; but sexp skipping has disadvantages. This function needs to,
-;;   ;; - ignore bracketing
-;;   ;; - catch punctuation character ';'
-;;   ;; - catch whitespace character '\n'
-;;   ;; - match keywords
-;;   ;; so regex.
-;;   ;; the complexity is in searching for 'new', 'throws' etc.
-;;   ;; could be mega-regex, but keep it simple.
-;; ;; forward char throws errors.
-;;   (let ((anchor (point)))
-;;   (while (and
-;;           ;; always stop at limit
-;;           (< (point) limit)
-;;           (progn
-;;             ;; sexp-skip any comments and strings.
-;;             (if (looking-at "\"\\|\\(/[/*]\\)")
-;;                 (if (match-beginning 1)
-;;                     ;; use forward comment. Sexps leap bracketing and
-;;                     ;; punctuation also.
-;;                     (forward-comment 1)
-;;                   ;; sexp finishes tight on strings
-;;                   (forward-sexp 1))
-;;                   (setq anchor (point)))
-;;             (if (> (re-search-forward vala-syntax:syntactical-newline-re2) anchor)
-;;               (goto-char (match-beginning 0))
-;;               (> (re-search-forward vala-syntax:syntactical-newline-re2) anchor) 
-;;            ;; nudge over LF and semi-colon
-;;             (when (or (= (char-after) ?\n) (= (char-after) ?\;))
-;;               (forward-char))
-
-;;               nil))))
-
-;;   ;;(message "ok at point %s" (point)))
-;; ;;(message "quit at point %s" (point))
-;; ;;  (message " limit at quit %s" limit))
-;;   (and (> (point) anchor) (< (point) limit))))
 
 
  (defun vala-syntax:goto-syntactical-line-start-interactive ()
