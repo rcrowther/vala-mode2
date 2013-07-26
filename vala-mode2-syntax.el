@@ -881,6 +881,50 @@ return: t if a path skipped and has no trailing point, else nil"
 ;(vala-syntax:skip-syntax-backward-symbol-path))
 
 
+;; SEEALSO: vala-syntax:pskip-partial-generic ()
+(defun vala-syntax:skip-generic ()
+  "Skip a generic description, even partial.
+If the generic fully closes, matching stops, even if followed by
+generic-like code. The function allows crossing line ends after
+commas.  It uses syntax as defined in the table, so is safe on an
+initial parse, and the return is designed to indicate if parsing
+could progress (not a test of parse validity).
+It is intended for use in detection.
+return: t if matched and the generic closed, else f"
+  (let ((depth 0) (start (point)))
+    (while (progn
+             ;;    (message "fuck -%s-" (point))
+             ;; three ways of continuing, comma, close angle brace,
+             ;; or unrecognised parse
+             (cond
+              ((eobp) nil)
+              ((= (char-after) ?\<)
+               (setq depth (+ depth 1))
+               (message " prop1 -%s--%s-" (point) (+ (point) 1))
+               (forward-char)
+               (skip-syntax-forward " " (point-max))
+               (vala-syntax:skip-syntax-symbol-path)
+               )
+              ((= (char-after) ?\,)
+               (forward-char)
+               (skip-syntax-forward " " (point-max))
+               (vala-syntax:skip-syntax-symbol-path)
+               )
+              ((= (char-after) ?\>)
+               (setq depth (- depth 1))
+               ;;(message " prop2 -%s--%s-" (char-before) (char-after))
+               (forward-char)
+               (> depth 0)
+               )
+              (t nil))))
+    ;;(message " depth -%s-" depth)
+    depth
+    ))
+;;(vala-syntax:skip-generic)
+;; <qdig.hoh<hot>>
+
+
+
 ;;
 ;; Compound syntax
 ;;
@@ -898,7 +942,7 @@ return: t if a type was matched, else nil"
     ;; information can not be trusted as angle brackets
     ;; (and maybe other characters) may carry c language parsing 
     ;; ambiguities. So regex. 
-(message "skip type")
+;;(message "skip type")
     ;; store the start to see if the tests match anything.
     (let ((anchor (point)))
       ;; The inital parse values can be used for symbols skipping, they
@@ -964,6 +1008,19 @@ return: t if a type was matched, else nil"
 ;(progn (forward-line -2) (goto-char (line-end-position))
 ;(vala-syntax:skip-syntax-backward-type))
 
+;; Unused
+(defun vala-syntax:skip-symbol-optional-generic ()
+  "Skip a symbol followed by an optional generic.
+Not the same as a type, doesn't allow square brackets.
+It uses syntax as defined in the table, so is safe on an
+initial parse,
+Used for method detection.
+return: t if symbol, and any following generic closed, else nill"
+  (and
+   (vala-syntax:skip-syntax-symbol-path)
+   (= (vala-syntax:skip-generic) 0)))
+;;(vala-syntax:skip-symbol-optional-generic)
+;;qaw<d>
 
 
 ;;
@@ -1162,36 +1219,33 @@ else nil"
           (return-code 0)
           (open-parenthesis nil)
           )
-      (message " class definition test: -%s-" (point))
+      ;;(message " class definition test: -%s-" (point))
       (cond 
-       ;; if at top level, return true
-       ;; 0 = depth of parentheses
-       ;;  ((< (nth 0 (syntax-ppss (point))) 1) t)
        ;; if in a comment, return false
        ;; 4 = in comment
        ((nth 4 (syntax-ppss (point))) nil)
        (t 
-        ;; test for an open curved parenthesis. If so, jump back and
-        ;; out. This takes us out of parameter lists. It means
-        ;; little if we back out of a condition, for example,
-        ;; but if we back out of a method parameter list, the next
-        ;; test will make this return true, i.e. this function returns
-        ;; true for method parameter lists.
+        ;; back out of, sequentially, a curved, then curly brackets.
         ;; 1 = start of parentheses
         (setq open-parenthesis (nth 1 (syntax-ppss (point))))
         (when open-parenthesis
           ;; first parenthesis
           (goto-char open-parenthesis)
           ;; if curved bracket, jump back again, incrementing the
-          ;; return value
+          ;; return value. This takes us out of parameter lists. It
+          ;; means little if we back out of a condition, for example,
+          ;; as point is still in the code block of a method, but if
+          ;; we back out of a method parameter list, the next test
+          ;; will make this return true, i.e. the function returns
+          ;; true for method parameter lists.
           (when (= (char-after) ?\()
             (setq return-code 1)
             (setq open-parenthesis (nth 1 (syntax-ppss (point))))
             (when open-parenthesis
               (goto-char open-parenthesis)
               ))
-          ;; test for an open curly parenthesis. If so, jump back and
-          ;; out. This takes us out of a code block.
+          ;; test for an open curly parenthesis, appending to the
+          ;; return value. This takes us out of a code block.
           (when (= (char-after) ?\{)
             (setq return-code (+ return-code 2)))
            ;; (message "  class definition test-point2: -%s-" (point))
@@ -1212,10 +1266,11 @@ else nil"
   (message " is c-%s-" (vala-syntax:class-or-class-level-definition-p2)))
 
 ;; used in indent
-;TODO: This dhould allow line ends on spacing
+;TODO: This should allow line ends on spacing
 ; and make positive detection of all parts
 ; should also include a modifier check
 ; and also following brackets to confirm
+; and maybe be replaced by the definition test?
 (defun vala-syntax:syntax-function-or-class-declaration-p ()
   "Test for a fuction or class definition.
 Includes simple, array and class types. This
@@ -1468,7 +1523,7 @@ return: nil if no match, else t."
 
 
 
-
+;; TODO: allow multiline/no?
 (defun vala-syntax:pskip-partial-generic ()
   "Add properties and skip to generic descriptions, even partial.
 If the generic fully closes, matching stops, even if followed by
@@ -1484,10 +1539,11 @@ return: t if matched and the generic closed, else f"
              ;;    (message "fuck -%s-" (point))
              ;;skipping a little space here is about right?
              ;; (skip-char-space)
-             (skip-syntax-forward " " (line-end-position))
+             ;;(skip-syntax-forward " " (line-end-position))
              ;; three ways of continuing, comma, close angle brace,
              ;; or unrecognised parse
              (cond
+              ((eobp) nil)
               ((= (char-after) ?\<)
                (setq depth (+ depth 1))
                ;;(message " prop1 -%s--%s-" (point) (+ (point) 1))
@@ -1525,11 +1581,16 @@ return: t if matched and the generic closed, else f"
 ;vala-syntax:pskip-partial-generic ()
 
 
+;;TOCONSIDER: This mode only ever parses OO definitions and 'new'
+;;declarations so all that's needded for arrays is the empty
+;;bracket. If implicit definitions were added, or attempts made to
+;;highlight function calls, then the mode would need to understand
+;;multiDimArray[78:9], and so forth.
 (defun vala-syntax:pskip-partial-anytype ()
-  "Add properties and skip anytype declaration, even partial.
+  "Add properties and skip anytype definition, even partial.
 Includes simple, array and class types. This
 function should be used in areas which are likely to be a type, as it will
-sucessfully highlight anything that constitutes a valid Vala symbbol,
+sucessfully highlight anything that constitutes a valid Vala symbol,
 including method names and numeric values.
 The return is designed to indicate if parsing should progress (not a test
 of parse validity)
@@ -1538,7 +1599,7 @@ return: t if matched and any generic closed, else nil"
     (vala-syntax:skip-char-space)
     ;; test for array and generic qualifiers
     (cond
-     ((looking-at "\\[\\ss*\\]") (goto-char (match-end 0)) t)
+     ((looking-at "\\[ *\\]") (goto-char (match-end 0)) t)
      ((= (char-after) ?\<) (vala-syntax:pskip-partial-generic))
      (t 
       ;; no qualifiers at all, that's fine, return true
@@ -1562,9 +1623,11 @@ return: of no interest.
   (let ((anchor (point)) (forward-point nil))
     ;; There's no easy way here. The code must know what
     ;; follows the symbol to propertize, but can not save the match
-    ;; as it goes, as the locking is maybe a several-match path.
+    ;; along the way, as the locking is maybe a several-match path.
     ;; ho hum, let's go look...
-    (when (vala-syntax:skip-syntax-symbol-path)
+    ;;(message "  is method definition -%s-" (point))
+     (when (vala-syntax:skip-syntax-symbol-path)
+    
       ;; skip any space.
       (vala-syntax:skip-char-space)
       (setq forward-point (point))
@@ -1894,7 +1957,8 @@ body: if all keyword matching fails, code in this parameter is executed.
            ;; not enum elements.
            (when (vala-syntax:type-or-constructor-rough-p)
             (vala-syntax:pskip-partial-anytype)
-            (message "  try pskipping method or field -%s-" (point))
+            (vala-syntax:skip-char-space)
+           ;; (message "  try pskipping method or field -%s-" (point))
             (vala-syntax:pskip-method-or-field-definition))
           )
           ((= type-class 3)

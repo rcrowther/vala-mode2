@@ -1,4 +1,5 @@
 == CHANGELOG
+Bug: Some method symbols not highlighting in the test (missing space-skip code) 
 New class syntax predicate, more accurate, less verbose
 Bug: Some generics not highlighting in the test .vapi file (partial solution, added "owned" to parameter directives)
 New hybrid newline function
@@ -36,6 +37,8 @@ Fill strings
 
 Tidy Regex - second look needed
 Check regexps for consistency (define some as symbol?)
+
+Could have a skip method keystroke?
 
 Comment highlighting dying on adjustment
 
