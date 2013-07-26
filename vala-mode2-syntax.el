@@ -137,18 +137,33 @@ a block comment, else t")
 
 ;; Class (or classlike) definitions
 ;; followed by a definition of one symbol
+(defconst vala-syntax:class-definition-keywords-raw
+  '("class" "interface"))
+
+(defconst vala-syntax:class-definition-keywords-opt-re
+   (regexp-opt vala-syntax:class-definition-keywords-raw 'symbols))
+;;(looking-at vala-syntax:classlike-definition-keywords-and-bracketing-re)
+
+
 (defconst vala-syntax:classlike-definition-keywords-raw
-  '("class" "interface" "struct" "enum" "namespace"))
+  '("struct" "enum" "namespace"))
 
 (defconst vala-syntax:classlike-definition-keywords-opt-re
    (regexp-opt vala-syntax:classlike-definition-keywords-raw 'symbols))
+;;(looking-at vala-syntax:classlike-definition-keywords-and-bracketing-re)
 
-(defconst vala-syntax:classlike-definition-keywords-and-bracketing-re
+
+(defconst vala-syntax:level-indenting-keywords-raw
+  '("class" "interface" "struct" "enum" "namespace")
+  "This re includes namespace too")
+
+(defconst vala-syntax:level-indenting-keywords-opt-re
+   (regexp-opt vala-syntax:classlike-definition-keywords-raw 'symbols))
+
+(defconst vala-syntax:level-indenting-keywords-and-bracketing-re
   (concat "[{(/*]\\|\\(?:"
           vala-syntax:classlike-definition-keywords-opt-re
           "\\)"))
-;;(looking-at vala-syntax:classlike-definition-keywords-and-bracketing-re)
-
 
 ;; Modifiers used for class, method and field descriptions.
 ; What is partial/params?
@@ -1062,7 +1077,7 @@ Fails on empty lines, semi-colon, and beginning of buffer.
 param: a regex
 return: t if matched, else nil"
   (vala-syntax:look-backward-p 
-   vala-syntax:classlike-definition-keywords-opt-re))
+   vala-syntax:level-indenting-keywords-opt-re))
 
 ;; Much used,
 ;; profiling suggests about 1/8 of total scantime.
@@ -1088,10 +1103,10 @@ return: t if matched, else nil"
                      ;; over a code block.
    ;;                  (looking-at "(\\|\\|{\\|class")
                      (looking-at 
-                      vala-syntax:classlike-definition-keywords-and-bracketing-re)
+                      vala-syntax:level-indenting-keywords-and-bracketing-re)
                       ))))
 ;;  (message " classwords found at -%s-" (point))
-      (looking-at vala-syntax:classlike-definition-keywords-opt-re)
+      (looking-at vala-syntax:level-indenting-keywords-opt-re)
      ;; (looking-at "class")
       )))
 ; protect class boop.frog<> : 
@@ -1809,11 +1824,13 @@ Our dpec anyhow - doesnt include if, while etc.
 body: if all keyword matching fails, code in this parameter is executed.
 "
   `(cond
-    ((looking-at "\\(?:class\\|interface\\)[ ]+")
+    ((looking-at vala-syntax:class-definition-keywords-opt-re)
+
      (put-text-property (match-beginning 0) (match-end 0)
                         'font-lock-face
                         'font-lock-keyword-face)
      (goto-char (match-end 0))
+     (vala-syntax:skip-char-space)
      ;;(message "  is named as class -%s-" (point)) 
      ;; check for an inheritance list, and apply properties
      (when (and (vala-syntax:pskip-class-definition
@@ -1835,12 +1852,13 @@ body: if all keyword matching fails, code in this parameter is executed.
      (vala-syntax:pskip-anytype-symbol-pair))
 
     ;; enum...
-    ((looking-at "enum[ ]+")
+    ((looking-at vala-syntax:classlike-definition-keywords-opt-re)
      ;;(message "  is enum")
      (put-text-property (match-beginning 0) (match-end 0)
                         'font-lock-face
                         'font-lock-keyword-face)
      (goto-char (match-end 0))
+     (vala-syntax:skip-char-space)
      (vala-syntax:pskip-symbol-path
       'font-lock-class-definition-face))
 
@@ -1872,7 +1890,7 @@ body: if all keyword matching fails, code in this parameter is executed.
     ;;  )
 
     ;; using/namespace?
-    ((looking-at "\\(?:using\\|namespace\\)[ ]+")
+    ((looking-at "\\(?:using\\)[ ]+")
      (put-text-property (match-beginning 0) (match-end 0)
                         'font-lock-face
                         'font-lock-keyword-face)
