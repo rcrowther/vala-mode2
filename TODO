@@ -1,4 +1,5 @@
 == CHANGELOG
+New class syntax predicate, more accurate, less verbose
 Bug: Some generics not highlighting in the test .vapi file (partial solution, added "owned" to parameter directives)
 New hybrid newline function
 Changed syntactical newline search to use some sexp

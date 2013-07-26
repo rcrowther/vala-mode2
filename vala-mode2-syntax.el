@@ -229,6 +229,7 @@ note: not 'symbols. Bounded elsewhere.")
 
 
 ;; Value keywords
+;;TODO: should void be in here too?
 (defconst  vala-syntax:value-keywords-raw
   '("true" "false" "null"))
 
@@ -1140,9 +1141,75 @@ else nil"
         )))))
 ; (vala-syntax:class-or-class-level-definition-p)indiscrete.revelation +a[
 
+
+(defun vala-syntax:class-or-class-level-definition-p2 ()
+  "test if in class definition code, or a definition within a class code block.
+It ignores (char-based) line ends in a search to test for a class
+declaration.
+The function will return true for positions after a class declaration
+e.g. within an inheritance list, for positions within the brackets of
+a class, and for positions in curved brackets within either area? 
+This function uses syntax to skip. It relies on generic baracketing
+having bracketing syntax.
+return:
+0 if it passed without moving point,
+1 if it passed by moving out of curved parameters,
+2 if it passed by moving out of curly brackets,
+3 if it passed by moving out of both kinds of brackets,
+else nil"
+  (save-excursion
+    (let (
+          (return-code 0)
+          (open-parenthesis nil)
+          )
+      (message " class definition test: -%s-" (point))
+      (cond 
+       ;; if at top level, return true
+       ;; 0 = depth of parentheses
+       ;;  ((< (nth 0 (syntax-ppss (point))) 1) t)
+       ;; if in a comment, return false
+       ;; 4 = in comment
+       ((nth 4 (syntax-ppss (point))) nil)
+       (t 
+        ;; test for an open curved parenthesis. If so, jump back and
+        ;; out. This takes us out of parameter lists. It means
+        ;; little if we back out of a condition, for example,
+        ;; but if we back out of a method parameter list, the next
+        ;; test will make this return true, i.e. this function returns
+        ;; true for method parameter lists.
+        ;; 1 = start of parentheses
+        (setq open-parenthesis (nth 1 (syntax-ppss (point))))
+        (when open-parenthesis
+          ;; first parenthesis
+          (goto-char open-parenthesis)
+          ;; if curved bracket, jump back again, incrementing the
+          ;; return value
+          (when (= (char-after) ?\()
+            (setq return-code 1)
+            (setq open-parenthesis (nth 1 (syntax-ppss (point))))
+            (when open-parenthesis
+              (goto-char open-parenthesis)
+              ))
+          ;; test for an open curly parenthesis. If so, jump back and
+          ;; out. This takes us out of a code block.
+          (when (= (char-after) ?\{)
+            (setq return-code (+ return-code 2)))
+           ;; (message "  class definition test-point2: -%s-" (point))
+          )
+        ;; now test
+        (when (vala-syntax:preceeded-by-class-definition-p)
+          ;; cached results
+          ;; marginal 1/10 sec, not worth it.
+          ;; (vala-syntax:get-bracket-depth-cache
+          ;;     'vala-syntax:preceeded-by-class-definition-p
+          ;     (nth 0 (syntax-ppss (point))))
+          return-code)
+        )))))
+; (vala-syntax:class-or-class-level-definition-p)indiscrete.revelation +a[
+
 (defun vala-syntax:class-or-class-level-definition-p-interactive ()
   (interactive)
-  (message " is c-%s-" (vala-syntax:class-or-class-level-definition-p)))
+  (message " is c-%s-" (vala-syntax:class-or-class-level-definition-p2)))
 
 ;; used in indent
 ;TODO: This dhould allow line ends on spacing
@@ -1280,7 +1347,7 @@ checks if the previous character is a backslash escape, which is not itself back
 ;(vala-syntax:escaped-char-p 48931)
 
 
-(defun vala-syntax:propertize-strings (start end)
+(defun vala-syntax:propertize-line-comments-and-strings (start end)
   "Add string properties to inverted-comma characters in a block of text.
 Ignores text inside comments."
   (goto-char start)
@@ -1805,8 +1872,8 @@ body: if all keyword matching fails, code in this parameter is executed.
        ;; If no opening keywords, into the realms of substituting
        ;; detection heuristics for c-family long multiple-state
        ;; parsing.
-       (let ((type-class (vala-syntax:class-or-class-level-definition-p)))
-         ;;(message " type return %s" type-class)
+       (let ((type-class (vala-syntax:class-or-class-level-definition-p2)))
+        ;; (message " type return %s -%s-" type-class (point))
          (cond
           ;;failed. bail.
           ((null type-class))
@@ -1827,7 +1894,7 @@ body: if all keyword matching fails, code in this parameter is executed.
            ;; not enum elements.
            (when (vala-syntax:type-or-constructor-rough-p)
             (vala-syntax:pskip-partial-anytype)
-            ;;(message "  try pskipping method or field -%s-" (point))
+            (message "  try pskipping method or field -%s-" (point))
             (vala-syntax:pskip-method-or-field-definition))
           )
           ((= type-class 3)
@@ -1877,14 +1944,12 @@ body: if all keyword matching fails, code in this parameter is executed.
   (message "propertize area %s-%s" start end)
   ;; reset cache
   ;;(vala-syntax:reset-bracket-depth-cache))
-  (vala-syntax:propertize-strings start end)
-  ;; propertise from newlines
-  (vala-syntax:propertize-syntactical-newline start end)
+
   ;; propertize strings.
   ;; Unfortunately, added to the semantic parse, this means three
   ;; phase parsing for all text. But the string propertizing is a poor
   ;; fit to the newline skipping, and newline skipping is central to
-  ;; our approach. A seperate string propertize phase seems more
+  ;; our approach. A separate string propertize phase seems more
   ;; straightforward.
 
   ;; TODO: propertising of strings after the newline function means
@@ -1892,6 +1957,12 @@ body: if all keyword matching fails, code in this parameter is executed.
   ;; variable someplace making comments parathesis/string reactive?
   ;; Should this ordering be reacting to that?
 
+  ;; Comments and strings are propertized before newlines. This means
+  ;; the more detailed and complex newline propertise can do some
+  ;; (comment skipping), if not general (not generics), sexp skipping.
+  (vala-syntax:propertize-line-comments-and-strings start end)
+  ;; propertise from newlines
+  (vala-syntax:propertize-syntactical-newline start end)
   )
 
 
