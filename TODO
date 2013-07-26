@@ -1,4 +1,5 @@
 == CHANGELOG
+Bug: don't use function-face. Inherit values for method face
 Corrected regexp for previous commit
 struct/enum/namespace highlighting like class
 Bug: Some method symbols not highlighting in the test (missing space-skip code) 
@@ -40,13 +41,13 @@ Fill strings
 Tidy Regex - second look needed
 Check regexps for consistency (define some as symbol?)
 
-Do something about structs.
-
-Could have a skip method keystroke?
-
-Comment highlighting dying on adjustment
+Could have a skip OO keystroke?
 
 Some generics not highlighting in the test .vapi file (generic method symbols failing)
+This line,
+                public Node<unowned G> copy ();
+Need documentation back!
+
 
 are @ esapes (+ */&) really working?
 
@@ -60,8 +61,6 @@ Check against coding recommendations.
 Is sexp stepping ok?
 
 Maybe some would like a choice about using the semantic face function (especially with what it does to /** inline block comments **/)
-
-Some of the new font faces could/should inherit, but I never figured out how to do that *and* alter them.
 
 
 Cann't put URLs into comments without comment scanning switched off.

@@ -1655,7 +1655,7 @@ return: of no interest.
        ;; following open-bracket means a method declaration
        ((= (char-after) ?\()
         (goto-char anchor)
-        (vala-syntax:pskip-symbol-path 'font-lock-function-name-face)
+        (vala-syntax:pskip-symbol-path 'font-lock-method-definition-face)
         ;; TODO: params?
         (goto-char forward-point)
         (forward-char)

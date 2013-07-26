@@ -17,7 +17,7 @@ To Consider
 ===========
 Do not rely on the code, please assess for yourself. Comments are welcome.
 
-*Please note:* the mode was initially designed using space-indenting.  Though tabbed files should display ok, tabbing is in an alpha state.
+*Please note:* the mode was initially designed using space-indenting.  Tabbing is improving, but lagging in the testing.
 
 (author note: need more information on how to configure EMACS...)
 
@@ -89,8 +89,8 @@ Namespacing is highlighted
 Types are highlighted inconsistently
   Types are not highlighted in method bodies. Except when they create ``new`` types.
 
-Keywords are split into OO modifiers and minor
-  To the author, there's a difference
+Keywords are classified as 'OO modifiers' and 'minor'
+  For various reasons, the author split the classification into two terms.
 
 The highlighting rarely spills
   A byproduct of some of the coding. But the author don't regard this EMACS feature highly.
@@ -122,7 +122,7 @@ Full detection of verbatim and literal strings, cross-line. Imbalanced brackets 
 
 Spaces vs. tabs
 ---------------
-On the argument of the ages, Vala is a generous language. Whitespace is whitespace, code parses, and there are no guidelines, though source is tabbed.
+Vala is a generous language. Whitespace is whitespace, code parses, and there are no guidelines - though source is tabbed.
 
 vala-mode2,
 - detects if a file has been written using tabs or spaces (it looks at the first likely line).
@@ -137,14 +137,14 @@ in an EMACS startup file. Or change using the interface, ::
 
   M-x customize-mode > vala > indent-tabs-mode
 
-But remember, vala-mode2 will try to detect the tab mode of a file, so this default will only apply to new, or an occasionally undetectable, file.
+But remember, vala-mode2 will try to detect the tab mode of a file, so this default will only apply to a new, or an occasionally undetectable, file.
 
 
 To change the tab mode immediately, use,
 
   M-x set-variable > indent-tabs-mode
 
-The customizable interface is probably not what you want. It changes the default tab mode but, despite appearances, not the current buffer,::
+The customizable interface is probably not what you want. It changes the default tab mode but, despite the promise, not the current buffer,::
 
   C-h v > indent-tabs-mode > customize > indent-tabs-mode
 
@@ -190,7 +190,7 @@ From there, a preset can be selected or, if 'custom' is selected, indents can be
 
 All the common styles are rough approximations, not guaranteed formatting. 'ais' is an invented style - 'as if syntax' - brackets are treated as syntax and the indent is 2 spaces everywhere.
 
-The customization interface is recommended. Other methods (e.g. progamatic) have undefined or untested behaviour.
+The customization interface is recommended. Other methods (e.g. programatic) have undefined or untested behaviour.
 
 
 Fill functions
@@ -206,7 +206,7 @@ Fill functions also work within simple and verbatim stings. In string fills mark
 
 Whitespace cleanup
 ------------------
-The mode cleans up some whitespace as the buffer is modified. Every time a line is indented, the mode strips whitespace from the end of the line. This idea generally works unobtrusively and to some useful effect.
+The mode cleans up some whitespace as the buffer is modified. Every time a line is indented, the mode strips whitespace from the end of the line. This code generally works unobtrusively and to some useful effect.
 
 The cleanup code is always on, can not be switched off.
 
@@ -221,7 +221,7 @@ and, ::
 
 make clean
 
-On the author's computer, this cut a test computation from 6 secs to 4 secs.
+On the author's computer, this cut a test computation time from 6 to 4 secs.
 
 
 Notes for Emacs hackers and fans
@@ -255,7 +255,7 @@ A diverting and EMACS-instructive pastime is to try confusing modes with code wh
 
 Help
 ====
-There is still plenty of development code in the source, and some non-working/semi-developed, semi-obscured features. So do not rely on the results of the following common EMACS commands.
+There is still plenty of development code in source, and some non-working/semi-developed, semi-obscured features. So do not rely on the results of the following common EMACS commands.
 
 For information, try 'describe-mode', ::
 
@@ -278,8 +278,7 @@ TODO
 ====
 There's a TODO (with rough CHANGELOG and MAYBEPATH) in source but, publicly,
 
-- The mode would be far more interesting if it handled tabs
-- Many will want some sophistication added to the indenting
+- Indenting should be more sophisticated
 - The options and customization need help
 - Colour schemes for > 8 bit terminals would be nice.
 
