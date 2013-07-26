@@ -1,4 +1,5 @@
 == CHANGELOG
+Corrected regexp for previous commit
 struct/enum/namespace highlighting like class
 Bug: Some method symbols not highlighting in the test (missing space-skip code) 
 New class syntax predicate, more accurate, less verbose

@@ -158,11 +158,11 @@ a block comment, else t")
   "This re includes namespace too")
 
 (defconst vala-syntax:level-indenting-keywords-opt-re
-   (regexp-opt vala-syntax:classlike-definition-keywords-raw 'symbols))
+   (regexp-opt vala-syntax:level-indenting-keywords-raw 'symbols))
 
 (defconst vala-syntax:level-indenting-keywords-and-bracketing-re
   (concat "[{(/*]\\|\\(?:"
-          vala-syntax:classlike-definition-keywords-opt-re
+          vala-syntax:level-indenting-keywords-opt-re
           "\\)"))
 
 ;; Modifiers used for class, method and field descriptions.
@@ -1954,7 +1954,7 @@ body: if all keyword matching fails, code in this parameter is executed.
        ;; detection heuristics for c-family long multiple-state
        ;; parsing.
        (let ((type-class (vala-syntax:class-or-class-level-definition-p2)))
-        ;; (message " type return %s -%s-" type-class (point))
+         ;;(message " type return %s -%s-" type-class (point))
          (cond
           ;;failed. bail.
           ((null type-class))
