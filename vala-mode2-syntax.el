@@ -588,8 +588,11 @@ newlines. Includes semi-colon, form-feed, and the symbols 'new',
 
 
      ;; comments
-     ;; Not using auto-comment syntax for single-line comments
-     ;; as they finish with lineend. Propertize functions handle that.
+     ;; Not using auto-comment syntax for single-line comments as they
+     ;; usually finish with a line-end character (this mode puts the
+     ;; comment end on the character before the line-end, to keep the
+     ;; line-end alive if a sexp skips the comment). Propertize
+     ;; functions handle that.
      ;; 1: 1st char of 2 char comment start
      ;; 4: 2nd char of two char comment end
      ;; n: nestable
@@ -1418,67 +1421,112 @@ checks if the previous character is a backslash escape, which is not itself back
 
 
 (defun vala-syntax:propertize-line-comments-and-strings (start end)
-  "Add string properties to inverted-comma characters in a block of text.
-Ignores text inside comments."
+  "Add syntax properties to strings and line comment characters.
+"
   (goto-char start)
   ;; stash the matches so syntax-ppss will not interfere with them
   (let ((found-end nil) (found-start nil) (syntax-parse nil))
-  (while (re-search-forward "\"+\\|\\(//\\)" end t)
-    (if (match-beginning 1)
-        (progn
-          (put-text-property (match-beginning 1) (+ (match-beginning 1) 1) 
-                             'syntax-table
-                             (list 11 nil))
-          ;; put the comment end before the end of the line
-          ;; this is, I understand, a little unconventional, but
-          ;; means comment skipping will never skip the line end
-          ;; after one of these comments. Which we want, as we detect the line
-          ;; ends to maybe propertize. And if it is the final character, and not the
-          ;; linend, which delimits a comment, this makes no difference for,
-          ;; say, fontlocking the line.
-          (put-text-property (- (line-end-position) 1) (line-end-position)
-                             'syntax-table
-                             (list 12 nil))
-          (goto-char (line-end-position))
-          )
-      (setq found-end (match-end 0))
-      (setq found-start (match-beginning 0))
-      (setq syntax-parse (syntax-ppss found-start))
-      (if (or
-           ;; if escaped, ignore and move on.
-           (vala-syntax:escaped-char-p found-start)
-           ;; 4 = inside comment, ignore and move on.
-           (nth 4 syntax-parse))
-          (goto-char (+ found-end 1))
-        (progn
-        ;; propertizing, in some way.
-        ;; Strings may have been left unbalanced by a JIT parse (or
-        ;; something) that stops in the middle of a string. So test to
-        ;; see if the point that triggered this is unbalanced. If so,
-        ;; the string needs finishing, not starting.
-        ;; 3 = inside string
-        (if (nth 3 syntax-parse)
-            (progn
-              (put-text-property (- found-end 1) found-end
-                                 'syntax-table
-                                 (list 7 nil))
-              (goto-char (+ found-end 1))
-              )
+    (while (re-search-forward "\"+\\|\\(//\\)" end t)
+      (if (match-beginning 1)
           (progn
-            ;; string start
-            (when (or (= (- found-end found-start) 2)
-                      (= (- found-end found-start) 6))
-              ;; two or six delimiters are empty strings. Mark their
-              ;; ends too (then skip the whole match).
-              (put-text-property (- found-end 1) found-end
-                                 'syntax-table
-                                 (list 7 nil)))
-            ;; mark the first delimiter as a string quote
-            (put-text-property found-start (+ found-start 1)
+            ;; ...and here is an issue. What if the line-comment
+            ;; characters are inside a block comment? EMACS handles the
+            ;; line-comment, usually, by setting the end char to be the
+            ;; newline. This could never clash with a block comment end
+            ;; - either one comment is inside the other, or the comments
+            ;; overlap, and EMACS can handle overlapping comments.
+
+            ;; However, if we back off from the line-end, then it is
+            ;; possible we back onto a block comment end. Some solutions
+            ;; would be to,
+
+            ;; - set syntax using flags as EMACS would usually do.
+            ;; in the stock setup for c flags every line-end is maybe a
+            ;; line-comment end, Unfortunately, when flagging a block
+            ;; comment end, it seems EMACS will not recognise the
+            ;; character acts as a dual comment end. Sexp, if it reaches
+            ;; a nested comment, misses the intended (dual) comment
+            ;; end and looks for the next one, probably a line end
+            ;; halfway down the file. Seems like an accident in the
+            ;; making.
+
+            ;; - reject the characters
+            ;; on the basis they are inside a comment. Rejection may
+            ;; seem easy, but would render the stock variable
+            ;; parse-sexp-ignore-comments redundant. Whatever that does.
+
+            ;; - move back
+            ;; which is pretty ugly, but since this mode doesn't do
+            ;; anything with the second slash it identifies, is
+            ;; solid. Unlike flag setting, this seems to sexp as
+            ;; expected.
+
+            ;; Comment start on the initial slash. Easy.
+            (put-text-property (match-beginning 1) (+ (match-beginning 1) 1) 
                                'syntax-table
-                               (list 7 nil))
-            (goto-char (+ found-end 1)))
-          )))))))
+                               (list 11 nil))
+            
+            ;; put the comment end before the end of the line
+            ;; this is, I understand, a little unconventional, but means
+            ;; comment skipping will never skip the line end after one
+            ;; of these comments. Which we want, as we detect the line
+            ;; ends to maybe propertize. If it is the final character,
+            ;; and not the linend, which delimits a comment, this makes
+            ;; no difference for, say, fontlocking the line.
+            (let ((target-char (- (line-end-position) 1)))
+              (goto-char target-char)
+              ;; if on a block comment boundary, move back in.
+              (when (and (= (char-after) ?\/) (= (char-before) ?\*))
+                (setq target-char (- target-char 2)))
+              ;; propertize where we decided
+              (put-text-property target-char (+ target-char 1)
+                                 'syntax-table
+                                 (list 12 nil)))
+            ;; couldn't be anything interesting here now?
+            ;; rough test suggests no problems after the first comment
+            ;; is established
+            (goto-char (line-end-position))
+            )
+
+        ;; was a string delimiter
+        (setq found-end (match-end 0))
+        (setq found-start (match-beginning 0))
+        (setq syntax-parse (syntax-ppss found-start))
+        (if (or
+             ;; if escaped, ignore and move on.
+             (vala-syntax:escaped-char-p found-start)
+             ;; 4 = inside comment, ignore and move on.
+             (nth 4 syntax-parse))
+            (goto-char (+ found-end 1))
+          (progn
+            ;; propertizing, in some way.
+            ;; Strings may have been left unbalanced by a JIT parse (or
+            ;; something) that stops in the middle of a string. So test to
+            ;; see if the point that triggered this is unbalanced. If so,
+            ;; the string needs finishing, not starting.
+            ;; 3 = inside string
+            (if (nth 3 syntax-parse)
+                (progn
+                  (put-text-property (- found-end 1) found-end
+                                     'syntax-table
+                                     (list 7 nil))
+                  (goto-char (+ found-end 1))
+                  )
+              (progn
+                ;; string start
+                (when (or (= (- found-end found-start) 2)
+                          (= (- found-end found-start) 6))
+                  ;; two or six delimiters are empty strings. Mark their
+                  ;; ends too (then skip the whole match).
+                  (put-text-property (- found-end 1) found-end
+                                     'syntax-table
+                                     (list 7 nil)))
+                ;; mark the first delimiter as a string quote
+                (put-text-property found-start (+ found-start 1)
+                                   'syntax-table
+                                   (list 7 nil))
+                (goto-char (+ found-end 1)))
+              )))))))
 
 
 ;;

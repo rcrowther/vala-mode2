@@ -1,4 +1,5 @@
 == CHANGELOG
+Bug: comment spill when URLs embedded (syntax catagory clashes with flags)
 Bug: don't use function-face. Inherit values for method face
 Corrected regexp for previous commit
 struct/enum/namespace highlighting like class
@@ -63,10 +64,6 @@ Is sexp stepping ok?
 Maybe some would like a choice about using the semantic face function (especially with what it does to /** inline block comments **/)
 
 
-Cann't put URLs into comments without comment scanning switched off.
-
-React to comment scanning variable.
-
 
 == Indenting
 Could have indents on preprocessing directives (make into brackets?)
@@ -81,7 +78,14 @@ More sophisticated indenting.
 For new files, indent should default to indent-tabs-mode
 
 Test permanent saves of indent style customization.
+
  
+== Ignoring text in comments
+EMACS has a variable
+ parse-sexp-ignore-comments
+If the value is non-nil, then comments are treated as whitespace by the functions in this section and by forward-sexp, scan-lists and scan-sexps
+
+Which can be toggled on or off. This seems to default to nil, but many, many modes switch it to true. What does it do?
 
 
 == Compiling
